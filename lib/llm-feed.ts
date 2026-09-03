@@ -15,7 +15,6 @@
 import {
   getConfig,
   getDeliverables,
-  getProposalMarkdown,
   getStatusAsOf,
   getWeeklyUpdates,
 } from "./content";
@@ -115,10 +114,6 @@ export function buildLlmsTxt(): string {
   lines.push(
     "For the entire corpus as one document, fetch /llms-full.txt. For structured data, fetch /api/status.json.",
   );
-
-  lines.push("");
-  lines.push("## Proposal");
-  lines.push(`- [Developer Experience Initiative proposal](${b}/proposal/): the full funded proposal, rendered as Markdown.`);
 
   lines.push("");
   lines.push("## Deliverables");
@@ -240,10 +235,6 @@ export function buildLlmsFullTxt(): string {
   parts.push(
     "This document is generated from the tracker's committed content (see docs/ARCHITECTURE.md ADR-3): deliverable status is authored by hand; the weekly activity is gathered from GitHub as supporting evidence. All figures are snapshots as of the dates above, not real-time.",
   );
-
-  parts.push("\n---\n");
-  parts.push("## Proposal\n");
-  parts.push(getProposalMarkdown().trim());
 
   parts.push("\n---\n");
   parts.push("## Deliverable status\n");

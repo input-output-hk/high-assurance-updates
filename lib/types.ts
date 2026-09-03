@@ -84,58 +84,6 @@ export interface TrackedRepo {
   teamOnly: boolean;
 }
 
-// --- Impact (ecosystem KPIs we aim to influence but don't control) ---------
-
-export interface ImpactPoint {
-  label: string; // x-axis label, e.g. "Jul"
-  value: number;
-}
-
-export interface ImpactSeries {
-  name: string;
-  points: ImpactPoint[];
-}
-
-/** A relative-growth metric charted against control ecosystems. */
-export interface GrowthMetric {
-  name: string;
-  yLabel: string;
-  illustrative: boolean;
-  series: ImpactSeries[];
-}
-
-/** A metric benchmarked against Cardano's own past performance. */
-export interface PastMetric {
-  name: string;
-  note: string;
-  baseline: number | null;
-  target: number | null;
-}
-
-export interface ImpactConfig {
-  // Direct: the onboarding-difficulty experiment (two hackathons, before & after).
-  direct: {
-    title: string;
-    summary: string;
-    method: string;
-    characteristics: string[];
-  };
-  // Proxy — relative to the blockchain ecosystem (difference-in-differences vs
-  // control ecosystems, to control for industry-wide trends).
-  ecosystem: {
-    note: string;
-    source: string;
-    controls: string[];
-    targetPct: number;
-    metrics: GrowthMetric[];
-  };
-  // Proxy — relative to Cardano's own past years.
-  past: {
-    note: string;
-    metrics: PastMetric[];
-  };
-}
-
 export interface SiteConfig {
   site: {
     title: string;
