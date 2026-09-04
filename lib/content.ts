@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { load as loadYaml } from "js-yaml";
 import {
   ACTIVITY_TYPES,
+  OTHER_GROUP,
   PRODUCT_STATUSES,
   PROPOSAL_STATUSES,
   type ActivityItem,
@@ -29,7 +30,7 @@ const QUARTER_RE = /^Q[1-4]-\d{4}$/;
 
 function readYaml(fileName: string): unknown {
   const raw = readFileSync(join(CONTENT_DIR, fileName), "utf8");
-  return loadYaml(raw);
+  return loadYaml(raw, { filename: `content/${fileName}` });
 }
 
 /** Throw a build-failing error so malformed content never ships silently. */
@@ -91,18 +92,19 @@ function normalizeProduct(raw: unknown, index: number): Product {
   if (typeof raw !== "object" || raw === null) {
     fail("products.yaml", `${where} is not an object`);
   }
-  const d = raw as Record<string, unknown>;
+  const p = raw as Record<string, unknown>;
 
   for (const key of ["id", "slug", "title", "summary", "description", "statusUpdatedAt"]) {
-    if (!asString(d[key])) fail("products.yaml", `${where} is missing string "${key}"`);
+    if (!asString(p[key])) fail("products.yaml", `${where} is missing string "${key}"`);
   }
-  if (!PRODUCT_STATUSES.includes(d.status as ProductStatus)) {
+  if (!PRODUCT_STATUSES.includes(p.status as ProductStatus)) {
     fail(
       "products.yaml",
-      `${where} has invalid status "${String(d.status)}" (expected one of ${PRODUCT_STATUSES.join(", ")})`,
+      `${where} has invalid status "${String(p.status)}" (expected one of ${PRODUCT_STATUSES.join(", ")})`,
     );
   }
-  const quarter = String(d.quarter ?? "");
+  if (!asString(p.quarter)) fail("products.yaml", `${where} is missing string "quarter"`);
+  const quarter = p.quarter;
   if (quarter !== "ongoing" && !QUARTER_RE.test(quarter)) {
     fail(
       "products.yaml",
@@ -110,11 +112,11 @@ function normalizeProduct(raw: unknown, index: number): Product {
     );
   }
 
-  const milestones: Milestone[] = Array.isArray(d.milestones)
-    ? d.milestones.map((m, i) => normalizeMilestone(m, `${where} milestones[${i}]`))
+  const milestones: Milestone[] = Array.isArray(p.milestones)
+    ? p.milestones.map((m, i) => normalizeMilestone(m, `${where} milestones[${i}]`))
     : [];
-  const updates: ProductUpdate[] = Array.isArray(d.updates)
-    ? d.updates.flatMap((u) => {
+  const updates: ProductUpdate[] = Array.isArray(p.updates)
+    ? p.updates.flatMap((u) => {
         if (typeof u === "object" && u !== null) {
           const up = u as Record<string, unknown>;
           if (asString(up.date) && asString(up.description) && asString(up.week)) {
@@ -126,23 +128,27 @@ function normalizeProduct(raw: unknown, index: number): Product {
     : [];
 
   return {
-    id: d.id as string,
-    slug: d.slug as string,
-    title: d.title as string,
+    id: p.id as string,
+    slug: p.slug as string,
+    title: p.title as string,
     quarter,
-    status: d.status as ProductStatus,
-    statusUpdatedAt: d.statusUpdatedAt as string,
-    proposals: Array.isArray(d.proposals) ? d.proposals.filter(asString) : [],
+    status: p.status as ProductStatus,
+    statusUpdatedAt: p.statusUpdatedAt as string,
+    proposals: Array.isArray(p.proposals) ? p.proposals.filter(asString) : [],
     milestones,
     updates,
-    summary: d.summary as string,
-    description: d.description as string,
-    links: normalizeLinks(d.links),
+    summary: p.summary as string,
+    description: p.description as string,
+    links: normalizeLinks(p.links),
   };
 }
 
 let productsCache: Product[] | null = null;
 
+/**
+ * All products, in authored order — the site's organizing spine (ADR-13).
+ * Fails the build on malformed content.
+ */
 export function getProducts(): Product[] {
   if (productsCache) return productsCache;
   const raw = readYaml("products.yaml");
@@ -161,6 +167,7 @@ export function getProducts(): Product[] {
   return products;
 }
 
+/** The product with the given slug, or undefined if none matches. */
 export function getProductBySlug(slug: string): Product | undefined {
   return getProducts().find((p) => p.slug === slug);
 }
@@ -180,16 +187,21 @@ function normalizeProposal(raw: unknown, index: number): Proposal {
       `${where} has invalid status "${String(p.status)}" (expected one of ${PROPOSAL_STATUSES.join(", ")})`,
     );
   }
-  const num = (v: unknown): number | null =>
-    typeof v === "number" && Number.isFinite(v) ? v : null;
+  const num = (key: string, v: unknown): number | null => {
+    if (v == null) return null;
+    if (typeof v !== "number" || !Number.isFinite(v)) {
+      fail("proposals.yaml", `${where} has non-numeric "${key}" (${JSON.stringify(v)})`);
+    }
+    return v;
+  };
   return {
     id: p.id as string,
     title: p.title as string,
     status: p.status as ProposalStatus,
     windowStart: p.windowStart as string,
     windowEnd: p.windowEnd as string,
-    treasuryAskAda: num(p.treasuryAskAda),
-    budgetUsd: num(p.budgetUsd),
+    treasuryAskAda: num("treasuryAskAda", p.treasuryAskAda),
+    budgetUsd: num("budgetUsd", p.budgetUsd),
     summary: p.summary as string,
     products: Array.isArray(p.products) ? p.products.filter(asString) : [],
     collaborators: Array.isArray(p.collaborators) ? p.collaborators.filter(asString) : [],
@@ -210,19 +222,29 @@ export function getProposals(): Proposal[] {
   if (!Array.isArray(raw)) fail("proposals.yaml", "expected a top-level list");
   const proposals = raw.map((entry, i) => normalizeProposal(entry, i));
 
-  const proposalIds = new Set(proposals.map((p) => p.id));
-  const productIds = new Set(getProducts().map((p) => p.id));
+  const seen = new Set<string>();
+  for (const p of proposals) {
+    if (seen.has(p.id)) fail("proposals.yaml", `duplicate id "${p.id}"`);
+    seen.add(p.id);
+  }
+
+  const proposalById = new Map(proposals.map((p) => [p.id, p]));
+  const productById = new Map(getProducts().map((p) => [p.id, p]));
   for (const p of proposals) {
     for (const ref of p.products) {
-      if (!productIds.has(ref)) {
-        fail("proposals.yaml", `proposal "${p.id}" references unknown product "${ref}"`);
+      const product = productById.get(ref);
+      if (!product) fail("proposals.yaml", `proposal "${p.id}" references unknown product "${ref}"`);
+      if (!product.proposals.includes(p.id)) {
+        fail("products.yaml", `product "${ref}" does not list proposal "${p.id}" that funds it`);
       }
     }
   }
-  for (const product of getProducts()) {
+  for (const product of productById.values()) {
     for (const ref of product.proposals) {
-      if (!proposalIds.has(ref)) {
-        fail("products.yaml", `product "${product.id}" references unknown proposal "${ref}"`);
+      const prop = proposalById.get(ref);
+      if (!prop) fail("products.yaml", `product "${product.id}" references unknown proposal "${ref}"`);
+      if (!prop.products.includes(product.id)) {
+        fail("proposals.yaml", `proposal "${ref}" does not list product "${product.id}" that references it`);
       }
     }
   }
@@ -264,15 +286,22 @@ function normalizeTrackedRepo(raw: unknown, index: number): TrackedRepo {
 
 let configCache: SiteConfig | null = null;
 
+/**
+ * The site config. `site` is validated (it feeds LLM feeds and OG images);
+ * repos + roster feed the gatherer, so they're validated strictly too —
+ * including that every repo's product id actually exists (ADR-6).
+ */
 export function getConfig(): SiteConfig {
   if (configCache) return configCache;
   const raw = readYaml("config.yaml");
   if (typeof raw !== "object" || raw === null) fail("config.yaml", "expected an object");
   const c = raw as Record<string, unknown>;
 
-  // site/links are authored by us and consumed lightly; trust their shape.
-  // repos + roster feed the gatherer, so validate them strictly — including
-  // that every repo's product id actually exists (ADR-6).
+  const site = (c.site ?? {}) as Record<string, unknown>;
+  for (const key of ["title", "tagline", "description", "repoUrl", "url"]) {
+    if (!asString(site[key])) fail("config.yaml", `site is missing string "${key}"`);
+  }
+
   const repos = Array.isArray(c.repos)
     ? c.repos.map((entry, i) => normalizeTrackedRepo(entry, i))
     : fail("config.yaml", `expected "repos" to be a list`);
@@ -285,7 +314,7 @@ export function getConfig(): SiteConfig {
   }
 
   configCache = {
-    site: (c.site ?? {}) as SiteConfig["site"],
+    site: site as unknown as SiteConfig["site"],
     roster,
     repos,
     links: normalizeLinks(c.links),
@@ -329,7 +358,7 @@ function parseFrontmatter(
 ): { data: Record<string, unknown>; body: string } {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) fail(fileName, "missing YAML frontmatter (--- fenced block)");
-  const data = loadYaml(match[1]);
+  const data = loadYaml(match[1], { filename: `content/${fileName}` });
   if (typeof data !== "object" || data === null) {
     fail(fileName, "frontmatter is not an object");
   }
@@ -422,12 +451,18 @@ export function getWeeklyUpdates(): WeeklyUpdate[] {
   } catch {
     files = [];
   }
+  const validGroups = new Set<string>([OTHER_GROUP, ...getProducts().map((p) => p.id)]);
   const weeks = new Set<string>();
   const updates = files.map((file) => {
     const raw = readFileSync(join(WEEKLY_DIR, file), "utf8");
     const update = normalizeWeekly(`weekly/${file}`, raw);
     if (weeks.has(update.slug)) fail(`weekly/${file}`, `duplicate week "${update.week}"`);
     weeks.add(update.slug);
+    for (const g of update.groups) {
+      if (!validGroups.has(g.product)) {
+        fail(`weekly/${file}`, `activity group references unknown product "${g.product}"`);
+      }
+    }
     return update;
   });
   updates.sort((a, b) => (a.week < b.week ? 1 : a.week > b.week ? -1 : 0));

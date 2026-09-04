@@ -147,7 +147,7 @@ export interface ActivityItem {
   repo: string; // "owner/name"
   author: string;
   /** True when the author is not on the team roster — a community contribution (ADR-14). */
-  community?: boolean;
+  community?: true;
 }
 
 export interface WeeklyGroup {
