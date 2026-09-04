@@ -358,7 +358,7 @@ function parseFrontmatter(
 ): { data: Record<string, unknown>; body: string } {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) fail(fileName, "missing YAML frontmatter (--- fenced block)");
-  const data = loadYaml(match[1], { filename: `content/${fileName}` });
+  const data = loadYaml("\n" + match[1], { filename: `content/${fileName}` });
   if (typeof data !== "object" || data === null) {
     fail(fileName, "frontmatter is not an object");
   }
@@ -442,7 +442,7 @@ function normalizeWeekly(fileName: string, raw: string): WeeklyUpdate {
 
 let weeklyCache: WeeklyUpdate[] | null = null;
 
-/** All weekly updates, most recent first. Missing directory → empty list. */
+/** All weekly updates, most recent first. Missing directory → empty list (but products.yaml must load). */
 export function getWeeklyUpdates(): WeeklyUpdate[] {
   if (weeklyCache) return weeklyCache;
   let files: string[];
