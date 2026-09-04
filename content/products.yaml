@@ -1,0 +1,261 @@
+# Products of the Cardano High Assurance team.
+#
+# This file is the MANUAL source of truth for each PRODUCT's status
+# (see docs/ARCHITECTURE.md ADR-3). Auto-gathered GitHub activity is shown
+# alongside these but never overrides the status set here.
+#
+# A product rolls up gathered activity (by `id`, see config.yaml), names the
+# proposals that fund it (`proposals`, ids into proposals.yaml), and holds the
+# milestones committed in those proposals.
+#
+# status:  not-started | in-progress | done | blocked
+# quarter: Qn-YYYY | ongoing
+# Update `statusUpdatedAt` (YYYY-MM-DD) whenever you change a status.
+#
+# Milestones carry the proposal roadmap:
+#   dueDate:       committed deadline (YYYY-MM-DD; quarter deliverables use the
+#                  quarter's last day), or omit if there is no date.
+#   deliveredDate: when it was actually delivered (YYYY-MM-DD); omit until then.
+#
+# 2025/26-cycle milestones (PS.*, ST.*, BL.00) are recorded from the IOE 2025
+# Core Development Proposal; their statuses and delivery dates are TO BE
+# CONFIRMED by the team (spec §11) before this content is treated as final.
+
+- id: plu-stan
+  slug: plu-stan
+  title: Static Analyzer for Plinth
+  quarter: ongoing
+  status: in-progress
+  statusUpdatedAt: 2026-09-02
+  proposals:
+    - core-dev-2025
+  summary: >-
+    Plu-stan, a "one-click" static analysis tool for Plinth smart contracts:
+    detects common errors, performance issues, and anti-patterns without
+    requiring formal-methods expertise.
+  description: >-
+    Plu-stan automatically detects common errors, performance issues, and
+    anti-patterns in Plinth contracts, improving code quality, security, and
+    developer productivity without requiring user expertise. Its ruleset is
+    grounded in the Cardano CWE research, which catalogues Cardano-specific
+    vulnerability classes. The core is designed to be adaptable to other
+    smart contract languages.
+  milestones:
+    # 2025/26 cycle — statuses and dates to be confirmed by the team.
+    - id: PS.01
+      title: Proof of Concept
+      status: done
+      description: Initial proof-of-concept static analyzer for Plinth.
+    - id: PS.02
+      title: Ruleset Documentation
+      status: done
+      description: Documented ruleset of detected error classes and anti-patterns.
+    - id: PS.03
+      title: Stable Release
+      status: done
+      description: Stable release of the analyzer.
+  links: []
+
+- id: sc-testing-tool
+  slug: sc-testing-tool
+  title: Property-Based Testing for Cardano Contracts
+  quarter: ongoing
+  status: in-progress
+  statusUpdatedAt: 2026-09-02
+  proposals:
+    - core-dev-2025
+  summary: >-
+    A property-based testing framework for Cardano smart contracts: generates
+    diverse inputs and action sequences to test specified contract properties,
+    with a VS Code extension for the developer workflow.
+  description: >-
+    The sc-testing-tool automatically generates diverse inputs and actions to
+    test specified contract properties — surfacing edge cases, validating
+    assumptions, and checking vulnerabilities — and integrates into the Plinth
+    workflow for rigorous, automated testing. A companion Visual Studio Code
+    extension brings the workflow into the editor.
+  milestones:
+    # 2025/26 cycle — statuses and dates to be confirmed by the team.
+    - id: ST.01
+      title: CLI Tool
+      status: done
+      description: Command-line property-based testing tool for Plinth contracts.
+    - id: ST.02
+      title: VS Code Integration
+      status: done
+      description: Visual Studio Code extension integrating the PBT workflow.
+    - id: ST.03
+      title: Documentation
+      status: done
+      description: User documentation for the testing framework.
+  links: []
+
+- id: blaster
+  slug: blaster
+  title: Automated Formal Verification
+  quarter: ongoing
+  status: in-progress
+  statusUpdatedAt: 2026-09-02
+  proposals:
+    - core-dev-2025
+    - high-assurance-2026
+  summary: >-
+    Blaster, IO's open-source automated formal verification tool for Cardano
+    smart contracts: SMT-backed proofs over UPLC, already used to prove
+    correctness properties of production DApps including Djed and USDCx.
+  description: >-
+    Blaster mathematically proves correctness properties of Cardano smart
+    contracts with minimal annotations. Built in Lean 4 with Z3 as backend
+    solver, it operates on Untyped Plutus Core — the common compilation target
+    of all Cardano contract languages — so the verification core serves the
+    whole ecosystem. The 2026/27 cycle extends it from single-script to full
+    DApp-level verification, connects four surface languages (Aiken, Pebble,
+    Scalus, Futura), and ships a VS Code extension, a Common Vulnerability
+    Library, an equivalence checker, and kernel-replayable proof
+    reconstruction.
+  milestones:
+    # 2025/26 cycle — delivery date to be confirmed by the team.
+    - id: BL.00
+      title: Single-Script Verification (2025/26 cycle)
+      status: done
+      description: >-
+        Automated formal verification of individual Cardano scripts; used to
+        prove correctness properties of production DApps including Djed and
+        USDCx.
+    - id: BL.01
+      title: Equivalence Checking Tool
+      dueDate: "2026-12-31"
+      status: in-progress
+      description: >-
+        Backend capability and CLI for formal proof that two UPLC programs are
+        semantically equivalent — enabling post-audit optimizations and
+        cross-compiler verification. Integrated into CI/CD pipelines, with
+        tutorials covering correct and incorrect optimizations.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.02
+      title: VS Code Extension V1
+      dueDate: "2026-12-31"
+      status: in-progress
+      description: >-
+        Extension in the official Visual Studio Marketplace: single-contract
+        verification, tool parameterization, execution trace visualization,
+        and Lean 4 proof output for power users.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.03
+      title: Language Integrations — Aiken, Pebble, Scalus, Futura
+      dueDate: "2027-03-31"
+      status: not-started
+      description: >-
+        Blaster integrated as a verification backend into four smart contract
+        languages, with counterexample replay in each developer's native
+        environment. Delivered with Midgard Labs (Aiken), Harmonic Labs
+        (Pebble), Lantr (Scalus), and SAIB (Futura).
+      team: IO + Midgard Labs, Harmonic Labs, Lantr, SAIB
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.04
+      title: VS Code Extension V2
+      dueDate: "2027-06-30"
+      status: not-started
+      description: >-
+        Multi-contract interactions, multi-transaction trace visualization
+        (EUTXO graph view), CBOR-level counterexample export for
+        emulator/testnet replay, and an LLM-friendly counterexample format.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.05
+      title: DApp Proof Framework
+      dueDate: "2027-06-30"
+      status: not-started
+      description: >-
+        Blaster extended from single-contract to multi-script DApp-level
+        verification: an extended ledger state supporting multi-script
+        execution, and the Universal Annotation Language extended to express
+        protocol-wide invariants. Demonstrated on TWAG 1 examples.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.06
+      title: Common Vulnerability Library
+      dueDate: "2027-06-30"
+      status: not-started
+      description: >-
+        Publicly accessible library of ready-made property templates for major
+        DApp categories (DEXs, bridges, lending, NFT minting). Initial
+        coverage: Double Satisfaction, Large Value Attack, Large Datum Attack.
+        Open contribution process, produced with auditing partners.
+      team: IO + No.Witness Labs, TxPipe
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: BL.07
+      title: Proof Reconstruction Module
+      dueDate: "2027-06-30"
+      status: not-started
+      description: >-
+        Optimization and rewriting step proofs reconstructed as Lean 4 proof
+        terms, replayable using only the Lean kernel — removing Blaster from
+        the trusted codebase for this scope. Delivered with TxPipe.
+      team: IO + TxPipe
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+  links: []
+
+- id: cbde
+  slug: cbde
+  title: Container-Based Developer Environment
+  quarter: ongoing
+  status: in-progress
+  statusUpdatedAt: 2026-09-02
+  proposals:
+    - high-assurance-2026
+  summary: >-
+    CBDE (Hades): a single-command, pre-configured containerized environment
+    packaging the complete High Assurance toolkit at verified, compatible
+    versions — compressing setup from days to one click.
+  description: >-
+    CBDE packages the complete Plinth toolchain — compilers, libraries,
+    property-based testing, static analysis, formal verification, and
+    profiling — into a single-command containerized setup, becoming the
+    unified hub for the High Assurance toolkit. It targets the largest
+    measured barrier to Cardano developer onboarding: multi-day environment
+    configuration.
+  milestones:
+    - id: CB.01
+      title: Solution Design & Tool Inventory
+      dueDate: "2026-09-30"
+      status: in-progress
+      description: >-
+        Architectural design for the containerized environment; inventory of
+        all High Assurance tools and compilers with integration requirements,
+        dependency constraints, and containerization approach.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: CB.02
+      title: Environment Setup & Tool Encapsulation (0.x pre-release)
+      dueDate: "2026-12-31"
+      status: not-started
+      description: >-
+        Container runtime configured with verified, compatible versions of all
+        identified tools; all High Assurance tools operational inside the
+        container. Pre-release (0.x) for an initial internal cohort.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: CB.03
+      title: Community Beta & V1.0 Preparation
+      dueDate: "2027-03-31"
+      status: not-started
+      description: >-
+        At least five external community members using CBDE for real-world
+        development over 1–2 months; feedback captured in a prioritized
+        backlog, critical items addressed for V1.0.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+    - id: CB.04
+      title: V1.0 Release & Documentation
+      dueDate: "2027-06-30"
+      status: not-started
+      description: >-
+        Version 1.0 released to the community with comprehensive setup and
+        usage guides; all tools accessible and documented for use without
+        specialist environment knowledge.
+      team: IO
+      thirdPartyAssurance: Intersect delivery assurance + third-party assurer
+  links: []
