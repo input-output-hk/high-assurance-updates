@@ -2170,7 +2170,12 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 14: Updates pages copy
 
 **Files:**
-- Modify: `app/updates/page.tsx`, `app/updates/[week]/page.tsx`
+- Modify: `app/updates/page.tsx`
+
+> **Amended after Task 2:** `app/updates/[week]/page.tsx` was deleted in Task 2 — Next 16.2.10's
+> static export throws error E87 on a dynamic route whose `generateStaticParams()` returns zero
+> entries, so the route cannot exist while `content/weekly/` is empty. It is recreated (already in
+> product vocabulary) in **Task 21 Step 2**, once the backfill provides weekly content.
 
 - [ ] **Step 1: `app/updates/page.tsx`** — replace the metadata description with:
 
@@ -2179,44 +2184,6 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 and in the header paragraph, replace `grouped by\n          deliverable` wording so the sentence reads `…gathered automatically from GitHub and grouped by product, with a short narrative from the team.`
-
-- [ ] **Step 2: `app/updates/[week]/page.tsx`** — replace the import:
-
-```ts
-import { getDeliverables, getWeeklyUpdateBySlug, getWeeklyUpdates } from "@/lib/content";
-```
-
-with:
-
-```ts
-import { getProducts, getWeeklyUpdateBySlug, getWeeklyUpdates } from "@/lib/content";
-```
-
-replace the Activity section paragraph:
-
-```tsx
-            Merged PRs, issues, and releases grouped by deliverable — the evidence behind the
-            narrative above.
-```
-
-with:
-
-```tsx
-            Merged PRs, issues, and releases grouped by product — the evidence behind the
-            narrative above. Community contributions are called out.
-```
-
-and replace the component usage:
-
-```tsx
-          <ActivityGroups groups={update.groups} deliverables={getDeliverables()} />
-```
-
-with:
-
-```tsx
-          <ActivityGroups groups={update.groups} products={getProducts()} />
-```
 
 - [ ] **Step 3: Verify** `npx tsc --noEmit 2>&1 | grep "app/updates" ; echo "exit: $?"` → no grep output.
 
@@ -2780,16 +2747,16 @@ with:
 
 - [ ] **Step 2: `gather-weekly.yml`** — in the `Open draft PR` step, replace the body line `Auto-gathered weekly activity, grouped by deliverable.` with `Auto-gathered weekly activity, grouped by product. Community contributions are flagged.`
 
-- [ ] **Step 3: `package.json`** — change `"name": "devx-updates"` to `"name": "high-assurance-updates"`.
+- [ ] **Step 3: `package.json`** — change `"name": "devx-updates"` to `"name": "high-assurance-updates"`. *(Amended after Task 2:)* also remove the now-unused map-page dependencies — `"d3-force"` and `"react-force-graph-2d"` from `dependencies`, `"@types/d3-force"` from `devDependencies` — then run `npm install` so `package-lock.json` is refreshed.
 
 - [ ] **Step 4: `next.config.ts`** — update the comment `// GitHub Pages serves a project site under a subpath (e.g. /devx-updates).` to `// GitHub Pages serves a project site under a subpath (e.g. /high-assurance-updates).`
 
-- [ ] **Step 5: Verify** `npm run build` still passes (config change is comment-only; env var is CI-side).
+- [ ] **Step 5: Verify** `npm run build` still passes (env var is CI-side; the removed deps had no remaining importers after Task 2).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add .github package.json next.config.ts
+git add .github package.json package-lock.json next.config.ts
 git commit -m "chore(ci): retarget workflows and metadata to high-assurance-updates
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -2999,21 +2966,109 @@ ls content/weekly/
 
 Expected: one `2026-Wxx.md` per week (W27…W35) that had activity (quiet weeks are skipped by design). If a repo 404s (e.g. not yet public), the gatherer logs `⚠ owner/name: skipped` and continues — note any skips in the final report.
 
-- [ ] **Step 2: Spot-check one generated file** — open the newest `content/weekly/*.md` and confirm: frontmatter groups use `product:` keys matching `plu-stan|sc-testing-tool|blaster|cbde`, and any non-roster author's item carries `community: true`.
+- [ ] **Step 2: Recreate `app/updates/[week]/page.tsx`** *(amended after Task 2: the route was deleted there because Next 16's static export rejects a dynamic route with zero `generateStaticParams` entries; now that weekly files exist it can return).* Create the file with exactly:
 
-- [ ] **Step 3: Build with the real data**
+```tsx
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Markdown } from "@/components/markdown";
+import { ActivityGroups, CounterStrip } from "@/components/weekly-update";
+import { getProducts, getWeeklyUpdateBySlug, getWeeklyUpdates } from "@/lib/content";
+import { formatDate, formatDateRange, weekParts } from "@/lib/format";
+
+// Static export: pre-render one page per gathered week and 404 anything else.
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return getWeeklyUpdates().map((u) => ({ week: u.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ week: string }>;
+}): Promise<Metadata> {
+  const { week } = await params;
+  const update = getWeeklyUpdateBySlug(week);
+  if (!update) return { title: "Update" };
+  const { label, year } = weekParts(update.week);
+  return {
+    title: `${label} · ${year}`,
+    description: `Gathered activity and narrative for ${label}, ${year} (${formatDateRange(update.weekStart, update.weekEnd)}).`,
+  };
+}
+
+export default async function WeeklyUpdatePage({
+  params,
+}: {
+  params: Promise<{ week: string }>;
+}) {
+  const { week } = await params;
+  const update = getWeeklyUpdateBySlug(week);
+  if (!update) notFound();
+
+  const { label, year } = weekParts(update.week);
+
+  return (
+    <div className="mx-auto w-full max-w-4xl px-6 py-14">
+      <header className="border-b border-border pb-8">
+        <Link
+          href="/updates"
+          className="font-mono text-xs uppercase tracking-wider text-muted hover:text-foreground"
+        >
+          ← All updates
+        </Link>
+        <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-foreground">
+          {label} <span className="text-muted">· {year}</span>
+        </h1>
+        <p className="mt-3 font-mono text-xs uppercase tracking-wider text-muted">
+          {formatDateRange(update.weekStart, update.weekEnd)} · gathered {formatDate(update.generatedAt)}
+        </p>
+      </header>
+
+      <section className="mt-8">
+        <CounterStrip counters={update.counters} />
+      </section>
+
+      {update.body && (
+        <section className="mt-8">
+          <Markdown>{update.body}</Markdown>
+        </section>
+      )}
+
+      {update.groups.length > 0 && (
+        <section className="mt-10">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            Activity
+          </h2>
+          <p className="mt-1 mb-5 text-sm text-muted">
+            Merged PRs, issues, and releases grouped by product — the evidence behind the
+            narrative above. Community contributions are called out.
+          </p>
+          <ActivityGroups groups={update.groups} products={getProducts()} />
+        </section>
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Spot-check one generated file** — open the newest `content/weekly/*.md` and confirm: frontmatter groups use `product:` keys matching `plu-stan|sc-testing-tool|blaster|cbde`, and any non-roster author's item carries `community: true`.
+
+- [ ] **Step 4: Build with the real data**
 
 ```bash
 npm run build
 ```
 
-Expected: green — this exercises the weekly loader, the updates pages, the product-page rollups, and the feeds against real gathered data.
+Expected: green — this exercises the weekly loader, the recreated per-week route, the updates pages, the product-page rollups, and the feeds against real gathered data.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add content/weekly
-git commit -m "chore(weekly): backfill Jul-Aug 2026 activity
+git add content/weekly app/updates
+git commit -m "chore(weekly): backfill Jul-Aug 2026 activity and restore per-week pages
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
