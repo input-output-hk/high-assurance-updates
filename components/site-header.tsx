@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
@@ -25,11 +25,6 @@ function navLinkClass(active: boolean): string {
 export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Close the mobile menu whenever the route changes (i.e. a link was tapped).
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
@@ -92,6 +87,7 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setMenuOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={`rounded-md px-3 py-3 font-mono text-sm uppercase tracking-wider transition-colors ${
                     active ? "text-primary" : "text-muted hover:bg-surface-2 hover:text-foreground"
