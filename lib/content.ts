@@ -3,15 +3,18 @@ import { join } from "node:path";
 import { load as loadYaml } from "js-yaml";
 import {
   ACTIVITY_TYPES,
-  DELIVERABLE_STATUSES,
+  PRODUCT_STATUSES,
+  PROPOSAL_STATUSES,
   type ActivityItem,
   type ActivityType,
-  type Deliverable,
-  type DeliverableStatus,
-  type DeliverableUpdate,
   type Milestone,
-  type Quarter,
+  type Product,
+  type ProductStatus,
+  type ProductUpdate,
+  type Proposal,
+  type ProposalStatus,
   type SiteConfig,
+  type SiteLink,
   type TrackedRepo,
   type WeeklyCounters,
   type WeeklyGroup,
@@ -21,7 +24,8 @@ import {
 // Content is read from disk at build time (static export). No network, no runtime IO.
 const CONTENT_DIR = join(process.cwd(), "content");
 
-const QUARTERS: readonly Quarter[] = ["Q3-2026", "Q4-2026", "ongoing"];
+/** "Q3-2026"-style quarters; "ongoing" is also accepted for open-ended work. */
+const QUARTER_RE = /^Q[1-4]-\d{4}$/;
 
 function readYaml(fileName: string): unknown {
   const raw = readFileSync(join(CONTENT_DIR, fileName), "utf8");
@@ -37,22 +41,35 @@ function asString(v: unknown): v is string {
   return typeof v === "string" && v.length > 0;
 }
 
-function normalizeStatus(where: string, raw: unknown, fallback: DeliverableStatus): DeliverableStatus {
+function normalizeLinks(raw: unknown): SiteLink[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((l) => {
+    if (typeof l === "object" && l !== null) {
+      const link = l as Record<string, unknown>;
+      if (asString(link.label) && asString(link.url)) {
+        return [{ label: link.label, url: link.url }];
+      }
+    }
+    return [];
+  });
+}
+
+function normalizeStatus(where: string, raw: unknown, fallback: ProductStatus): ProductStatus {
   if (raw == null) return fallback;
-  if (!DELIVERABLE_STATUSES.includes(raw as DeliverableStatus)) {
+  if (!PRODUCT_STATUSES.includes(raw as ProductStatus)) {
     fail(
-      "deliverables.yaml",
-      `${where} has invalid status "${String(raw)}" (expected one of ${DELIVERABLE_STATUSES.join(", ")})`,
+      "products.yaml",
+      `${where} has invalid status "${String(raw)}" (expected one of ${PRODUCT_STATUSES.join(", ")})`,
     );
   }
-  return raw as DeliverableStatus;
+  return raw as ProductStatus;
 }
 
 function normalizeMilestone(raw: unknown, where: string): Milestone {
-  if (typeof raw !== "object" || raw === null) fail("deliverables.yaml", `${where} is not an object`);
+  if (typeof raw !== "object" || raw === null) fail("products.yaml", `${where} is not an object`);
   const m = raw as Record<string, unknown>;
   for (const key of ["id", "title"]) {
-    if (!asString(m[key])) fail("deliverables.yaml", `${where} is missing string "${key}"`);
+    if (!asString(m[key])) fail("products.yaml", `${where} is missing string "${key}"`);
   }
   const text = (v: unknown): string => (asString(v) ? v : "");
   return {
@@ -69,33 +86,34 @@ function normalizeMilestone(raw: unknown, where: string): Milestone {
   };
 }
 
-function normalizeDeliverable(raw: unknown, index: number): Deliverable {
-  const where = `deliverable #${index + 1}`;
+function normalizeProduct(raw: unknown, index: number): Product {
+  const where = `product #${index + 1}`;
   if (typeof raw !== "object" || raw === null) {
-    fail("deliverables.yaml", `${where} is not an object`);
+    fail("products.yaml", `${where} is not an object`);
   }
   const d = raw as Record<string, unknown>;
 
   for (const key of ["id", "slug", "title", "summary", "description", "statusUpdatedAt"]) {
-    if (!asString(d[key])) fail("deliverables.yaml", `${where} is missing string "${key}"`);
+    if (!asString(d[key])) fail("products.yaml", `${where} is missing string "${key}"`);
   }
-  if (!DELIVERABLE_STATUSES.includes(d.status as DeliverableStatus)) {
+  if (!PRODUCT_STATUSES.includes(d.status as ProductStatus)) {
     fail(
-      "deliverables.yaml",
-      `${where} has invalid status "${String(d.status)}" (expected one of ${DELIVERABLE_STATUSES.join(", ")})`,
+      "products.yaml",
+      `${where} has invalid status "${String(d.status)}" (expected one of ${PRODUCT_STATUSES.join(", ")})`,
     );
   }
-  if (!QUARTERS.includes(d.quarter as Quarter)) {
+  const quarter = String(d.quarter ?? "");
+  if (quarter !== "ongoing" && !QUARTER_RE.test(quarter)) {
     fail(
-      "deliverables.yaml",
-      `${where} has invalid quarter "${String(d.quarter)}" (expected one of ${QUARTERS.join(", ")})`,
+      "products.yaml",
+      `${where} has invalid quarter "${quarter}" (expected "Q1-2026"-style or "ongoing")`,
     );
   }
 
   const milestones: Milestone[] = Array.isArray(d.milestones)
     ? d.milestones.map((m, i) => normalizeMilestone(m, `${where} milestones[${i}]`))
     : [];
-  const updates: DeliverableUpdate[] = Array.isArray(d.updates)
+  const updates: ProductUpdate[] = Array.isArray(d.updates)
     ? d.updates.flatMap((u) => {
         if (typeof u === "object" && u !== null) {
           const up = u as Record<string, unknown>;
@@ -106,53 +124,119 @@ function normalizeDeliverable(raw: unknown, index: number): Deliverable {
         return [];
       })
     : [];
-  const links = Array.isArray(d.links)
-    ? d.links.flatMap((l) => {
-        if (typeof l === "object" && l !== null) {
-          const link = l as Record<string, unknown>;
-          if (asString(link.label) && asString(link.url)) {
-            return [{ label: link.label, url: link.url }];
-          }
-        }
-        return [];
-      })
-    : [];
 
   return {
     id: d.id as string,
     slug: d.slug as string,
     title: d.title as string,
-    quarter: d.quarter as Quarter,
-    status: d.status as DeliverableStatus,
+    quarter,
+    status: d.status as ProductStatus,
     statusUpdatedAt: d.statusUpdatedAt as string,
+    proposals: Array.isArray(d.proposals) ? d.proposals.filter(asString) : [],
     milestones,
     updates,
     summary: d.summary as string,
     description: d.description as string,
-    links,
+    links: normalizeLinks(d.links),
   };
 }
 
-let deliverablesCache: Deliverable[] | null = null;
+let productsCache: Product[] | null = null;
 
-export function getDeliverables(): Deliverable[] {
-  if (deliverablesCache) return deliverablesCache;
-  const raw = readYaml("deliverables.yaml");
-  if (!Array.isArray(raw)) fail("deliverables.yaml", "expected a top-level list");
+export function getProducts(): Product[] {
+  if (productsCache) return productsCache;
+  const raw = readYaml("products.yaml");
+  if (!Array.isArray(raw)) fail("products.yaml", "expected a top-level list");
   const slugs = new Set<string>();
-  const deliverables = raw.map((entry, i) => {
-    const d = normalizeDeliverable(entry, i);
-    if (slugs.has(d.slug)) fail("deliverables.yaml", `duplicate slug "${d.slug}"`);
-    slugs.add(d.slug);
-    return d;
+  const ids = new Set<string>();
+  const products = raw.map((entry, i) => {
+    const p = normalizeProduct(entry, i);
+    if (slugs.has(p.slug)) fail("products.yaml", `duplicate slug "${p.slug}"`);
+    if (ids.has(p.id)) fail("products.yaml", `duplicate id "${p.id}"`);
+    slugs.add(p.slug);
+    ids.add(p.id);
+    return p;
   });
-  deliverablesCache = deliverables;
-  return deliverables;
+  productsCache = products;
+  return products;
 }
 
-export function getDeliverableBySlug(slug: string): Deliverable | undefined {
-  return getDeliverables().find((d) => d.slug === slug);
+export function getProductBySlug(slug: string): Product | undefined {
+  return getProducts().find((p) => p.slug === slug);
 }
+
+// --- Proposals ---------------------------------------------------------------
+
+function normalizeProposal(raw: unknown, index: number): Proposal {
+  const where = `proposal #${index + 1}`;
+  if (typeof raw !== "object" || raw === null) fail("proposals.yaml", `${where} is not an object`);
+  const p = raw as Record<string, unknown>;
+  for (const key of ["id", "title", "windowStart", "windowEnd", "summary"]) {
+    if (!asString(p[key])) fail("proposals.yaml", `${where} is missing string "${key}"`);
+  }
+  if (!PROPOSAL_STATUSES.includes(p.status as ProposalStatus)) {
+    fail(
+      "proposals.yaml",
+      `${where} has invalid status "${String(p.status)}" (expected one of ${PROPOSAL_STATUSES.join(", ")})`,
+    );
+  }
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
+  return {
+    id: p.id as string,
+    title: p.title as string,
+    status: p.status as ProposalStatus,
+    windowStart: p.windowStart as string,
+    windowEnd: p.windowEnd as string,
+    treasuryAskAda: num(p.treasuryAskAda),
+    budgetUsd: num(p.budgetUsd),
+    summary: p.summary as string,
+    products: Array.isArray(p.products) ? p.products.filter(asString) : [],
+    collaborators: Array.isArray(p.collaborators) ? p.collaborators.filter(asString) : [],
+    links: normalizeLinks(p.links),
+    notes: asString(p.notes) ? p.notes : "",
+  };
+}
+
+let proposalsCache: Proposal[] | null = null;
+
+/**
+ * All funding proposals, in authored order. Cross-validates both directions of
+ * the product↔proposal references so a broken id fails the build (ADR-13).
+ */
+export function getProposals(): Proposal[] {
+  if (proposalsCache) return proposalsCache;
+  const raw = readYaml("proposals.yaml");
+  if (!Array.isArray(raw)) fail("proposals.yaml", "expected a top-level list");
+  const proposals = raw.map((entry, i) => normalizeProposal(entry, i));
+
+  const proposalIds = new Set(proposals.map((p) => p.id));
+  const productIds = new Set(getProducts().map((p) => p.id));
+  for (const p of proposals) {
+    for (const ref of p.products) {
+      if (!productIds.has(ref)) {
+        fail("proposals.yaml", `proposal "${p.id}" references unknown product "${ref}"`);
+      }
+    }
+  }
+  for (const product of getProducts()) {
+    for (const ref of product.proposals) {
+      if (!proposalIds.has(ref)) {
+        fail("products.yaml", `product "${product.id}" references unknown proposal "${ref}"`);
+      }
+    }
+  }
+
+  proposalsCache = proposals;
+  return proposals;
+}
+
+/** Proposals that fund a given product id. */
+export function getProposalsForProduct(productId: string): Proposal[] {
+  return getProposals().filter((p) => p.products.includes(productId));
+}
+
+// --- Site config -------------------------------------------------------------
 
 /** Split a GitHub repo URL into { owner, name }. */
 function parseRepoUrl(url: string): { owner: string; name: string } | null {
@@ -168,12 +252,12 @@ function normalizeTrackedRepo(raw: unknown, index: number): TrackedRepo {
   if (!asString(r.url)) fail("config.yaml", `${where} is missing string "url"`);
   const parsed = parseRepoUrl(r.url);
   if (!parsed) fail("config.yaml", `${where} url "${r.url}" is not a github.com repo URL`);
-  const deliverable = r.deliverable == null ? null : String(r.deliverable);
+  const product = r.product == null ? null : String(r.product);
   return {
     url: r.url,
     owner: parsed.owner,
     name: parsed.name,
-    deliverable,
+    product,
     teamOnly: r.teamOnly === true,
   };
 }
@@ -186,14 +270,26 @@ export function getConfig(): SiteConfig {
   if (typeof raw !== "object" || raw === null) fail("config.yaml", "expected an object");
   const c = raw as Record<string, unknown>;
 
-  // site / proposal / links are authored by us and consumed lightly; trust them.
-  // repos + roster feed the gatherer, so validate their shape strictly.
+  // site/links are authored by us and consumed lightly; trust their shape.
+  // repos + roster feed the gatherer, so validate them strictly — including
+  // that every repo's product id actually exists (ADR-6).
   const repos = Array.isArray(c.repos)
     ? c.repos.map((entry, i) => normalizeTrackedRepo(entry, i))
     : fail("config.yaml", `expected "repos" to be a list`);
   const roster = Array.isArray(c.roster) ? c.roster.filter(asString) : [];
+  const productIds = new Set(getProducts().map((p) => p.id));
+  for (const repo of repos) {
+    if (repo.product !== null && !productIds.has(repo.product)) {
+      fail("config.yaml", `repo ${repo.owner}/${repo.name} references unknown product "${repo.product}"`);
+    }
+  }
 
-  configCache = { ...(raw as SiteConfig), repos, roster };
+  configCache = {
+    site: (c.site ?? {}) as SiteConfig["site"],
+    roster,
+    repos,
+    links: normalizeLinks(c.links),
+  };
   return configCache;
 }
 
@@ -203,23 +299,23 @@ export function getTrackedRepos(): TrackedRepo[] {
 }
 
 /**
- * Tracked repos that roll up to a given deliverable id — derived from the same
- * `config.yaml` list the gatherer reads, so the deliverable page and the
- * gathered activity can never drift out of sync.
+ * Tracked repos that roll up to a given product id — derived from the same
+ * `config.yaml` list the gatherer reads, so the product page and the gathered
+ * activity can never drift out of sync.
  */
-export function getReposForDeliverable(deliverableId: string): TrackedRepo[] {
-  return getTrackedRepos().filter((r) => r.deliverable === deliverableId);
+export function getReposForProduct(productId: string): TrackedRepo[] {
+  return getTrackedRepos().filter((r) => r.product === productId);
 }
 
-/** Latest statusUpdatedAt across all deliverables — the site's "status as of" date. */
+/** Latest statusUpdatedAt across all products — the site's "status as of" date. */
 export function getStatusAsOf(): string {
-  return getDeliverables()
-    .map((d) => d.statusUpdatedAt)
+  return getProducts()
+    .map((p) => p.statusUpdatedAt)
     .sort()
     .at(-1) ?? "";
 }
 
-// --- Weekly updates --------------------------------------------------------
+// --- Weekly updates ----------------------------------------------------------
 
 const WEEKLY_DIR = join(CONTENT_DIR, "weekly");
 
@@ -271,6 +367,7 @@ function normalizeActivityItem(fileName: string, where: string, raw: unknown): A
     url: i.url,
     repo: i.repo,
     author: asString(i.author) ? i.author : "",
+    ...(i.community === true ? { community: true } : {}),
   };
 }
 
@@ -278,7 +375,7 @@ function normalizeGroup(fileName: string, index: number, raw: unknown): WeeklyGr
   const where = `activity[${index}]`;
   if (typeof raw !== "object" || raw === null) fail(fileName, `${where} is not an object`);
   const g = raw as Record<string, unknown>;
-  if (!asString(g.deliverable)) fail(fileName, `${where} is missing string "deliverable"`);
+  if (!asString(g.product)) fail(fileName, `${where} is missing string "product"`);
   const items = Array.isArray(g.items)
     ? g.items
         .map((it, i) => normalizeActivityItem(fileName, `${where}.items[${i}]`, it))
@@ -290,7 +387,7 @@ function normalizeGroup(fileName: string, index: number, raw: unknown): WeeklyGr
       if (typeof count === "number" && Number.isFinite(count)) commitCounts[repo] = count;
     }
   }
-  return { deliverable: g.deliverable, items, commitCounts };
+  return { product: g.product, items, commitCounts };
 }
 
 function normalizeWeekly(fileName: string, raw: string): WeeklyUpdate {
