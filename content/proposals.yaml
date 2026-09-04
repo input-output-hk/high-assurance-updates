@@ -1,0 +1,74 @@
+# Funding proposals behind the High Assurance products (ADR-13).
+#
+# Proposals are METADATA, not structure: the site is organized by product, and
+# each product lists the proposal ids that fund it. Canonical proposal texts
+# live at the external links; this file holds only what the site displays.
+#
+# status: active | completed
+
+- id: core-dev-2025
+  title: IOE 2025 Core Development Proposal — Plutus High Assurance
+  status: completed
+  windowStart: Q2-2025
+  windowEnd: Q2-2026
+  # USD reference budget: the sum of the three Plutus High Assurance
+  # initiatives ($1,859,000 AFV + $2,366,000 PBT + $777,140 Static Analyzer).
+  budgetUsd: 5002140
+  summary: >-
+    Input Output Engineering's 2025 core budget proposal. Its three Plutus
+    High Assurance initiatives funded the first cycle of this team's tools:
+    the Automatic Formal Verification tool (Blaster), the Property-Based
+    Testing tool, and the Static Analyzer (Plu-stan).
+  products:
+    - blaster
+    - sc-testing-tool
+    - plu-stan
+  collaborators:
+    - Anastasia Labs
+    - MLabs
+    - Obsidian Systems
+    - Modus Create
+    - Sundae Labs
+  links:
+    # Gateway link derived from the proposal PDF's IPFS CID — verify it
+    # resolves before launch (spec §11).
+    - label: Proposal document (v1.1, PDF)
+      url: "https://ipfs.io/ipfs/bafybeicabpq4cu6eev53m3ywiczbidyn2ivos4tglq7vy3gkbklp3dk5zi"
+  notes: >-
+    The 2025 Core Development Proposal also funded many initiatives outside
+    this tracker's scope (Leios, Hydra, Mithril, and others); only its Plutus
+    High Assurance initiatives are tracked here.
+
+- id: high-assurance-2026
+  title: Cardano High Assurance 2026/27
+  status: active
+  windowStart: Q3-2026
+  windowEnd: Q2-2027
+  treasuryAskAda: 13078578
+  budgetUsd: 3138859
+  summary: >-
+    On-chain governance action funding two workstreams under the Cardano High
+    Assurance umbrella: extending Blaster from single-script to full
+    DApp-level verification with four new language integrations
+    (₳10,112,037), and delivering the Container-Based Developer Environment
+    that packages the complete toolkit into a single-command setup
+    (₳2,966,541). Administered by Intersect via milestone-based disbursement;
+    unspent funds return to the Treasury.
+  products:
+    - blaster
+    - cbde
+  collaborators:
+    - Lantr
+    - Harmonic Labs
+    - SAIB
+    - Midgard Labs
+    - TxPipe
+    - No.Witness Labs
+  links:
+    - label: Governance action (AdaStat)
+      url: "https://adastat.net/governances/73e171a4c0730b4b59ecae271ab89f12a9d56360b02920e1f95107dbdc1d676205"
+    - label: Proposal document (IPFS)
+      url: "https://ipnso-com.ipns.dweb.link/?cid=QmQBhjELHaMKhYZjwuskHS9NRyvUdiGv69aK8C1H787c5A"
+  notes: >-
+    USD figure is a reference at an ADA/USD rate of 0.24; the ask is
+    denominated in ada.
