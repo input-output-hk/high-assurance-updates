@@ -1,69 +1,70 @@
-# Site-wide configuration for the DevX Initiative tracker.
+# Site-wide configuration for the Cardano High Assurance tracker.
 site:
-  title: Cardano DevX Initiative
-  tagline: A transparent, weekly-updated tracker for a funded Cardano Developer Experience program.
+  title: Cardano High Assurance
+  tagline: A transparent, weekly-updated tracker for IO's Cardano High Assurance toolkit.
   description: >-
-    Track delivery of Input Output's funded Cardano Developer Experience
-    Initiative: deliverable status, milestones, and weekly progress.
-  repoUrl: "https://github.com/input-output-hk/devx-updates"
+    Track delivery of Input Output's Cardano High Assurance products —
+    automated formal verification (Blaster), property-based testing, static
+    analysis, and the containerized developer environment: product status,
+    milestones, and weekly progress.
+  repoUrl: "https://github.com/input-output-hk/high-assurance-updates"
   # Canonical public base URL (includes the Pages subpath). The single knob to
   # change if we move to a custom domain (ADR-11). Used to build absolute links
   # in the LLM-readable feeds (/llms.txt, /llms-full.txt, /api/status.json).
-  url: "https://input-output-hk.github.io/devx-updates"
+  url: "https://input-output-hk.github.io/high-assurance-updates"
 
-proposal:
-  treasuryAskAda: 3601926
-  treasuryAskUsd: 864462
-  windowStart: Q3-2026
-  windowEnd: Q4-2026
-  lead: Robertino Martinez
-  collaborators:
-    - Intersect Developer Advocate Program
-    - TxPipe
-
+# GitHub logins whose work counts as the team's. Used for teamOnly filtering
+# (ADR-5) and for flagging community contributions in owned repos (ADR-14).
 roster:
-  - rober-m
-  - paulobressan
-  - alegadea
-  - federicoweill
-  - manugunther
-  - franciscojoray
-  - sofia-bobbiesi
+  - sfeitosa
+  - bogdan-manole
+  - sjoerdvisscher
+  - etiennejf
+  - paulacu-iohk
+  - EehMauro
+  - KJES4
   - RSoulatIOHK
-  - buddhisthead
+  - mpetruska
 
 # Curated repositories the gatherer tracks (ADR-4). Each declares:
-#   deliverable: which deliverable (D1…D8) its activity rolls up to, or null
-#                to fall into the "Other / Reactive" bucket (ADR-6).
-#   teamOnly:    true for shared/external repos — count only activity authored
-#                by a roster member (ADR-5); false (default) for owned repos.
-# Placeholder list — replace URLs with the initiative's real public repos.
+#   product:  which product its activity rolls up to, or null to fall into
+#             the "Other" bucket (ADR-6).
+#   teamOnly: true for shared/external repos — count only activity authored
+#             by a roster member (ADR-5); false (default) for owned repos.
 repos:
-  - url: "https://github.com/input-output-hk/devx-updates"
-    deliverable: D1
+  - url: "https://github.com/input-output-hk/plu-stan"
+    product: plu-stan
     teamOnly: false
-  - url: "https://github.com/input-output-hk/cardano-init"
-    deliverable: D3
+  - url: "https://github.com/input-output-hk/Cardano-CWE-Research"
+    product: plu-stan
     teamOnly: false
-  - url: "https://github.com/input-output-hk/contracts-library"
-    deliverable: D5
+  - url: "https://github.com/input-output-hk/sc-testing-tools"
+    product: sc-testing-tool
     teamOnly: false
-  - url: "https://github.com/cardano-foundation/developer-portal"
-    deliverable: D4
-    teamOnly: true
-  - url: "https://github.com/cardano-foundation/cardano-templates"
-    deliverable: D8
-    teamOnly: true
-  - url: "https://github.com/blinklabs-io/cardano-up"
-    deliverable: D3
-    teamOnly: true
-  - url: "https://github.com/cardano-foundation/cardano-dev-skills"
-    deliverable: D8
-    teamOnly: true
+  - url: "https://github.com/input-output-hk/sc-testing-tools-vs-extension"
+    product: sc-testing-tool
+    teamOnly: false
+  - url: "https://github.com/input-output-hk/Lean-blaster"
+    product: blaster
+    teamOnly: false
+  - url: "https://github.com/input-output-hk/Blaster-benchmarking"
+    product: blaster
+    teamOnly: false
+  - url: "https://github.com/input-output-hk/PlutusCoreBlaster"
+    product: blaster
+    teamOnly: false
+  - url: "https://github.com/input-output-hk/CardanoLedgerApiBlaster"
+    product: blaster
+    teamOnly: false
+  # CBDE — the repo is expected to be renamed to "Hades"; GitHub redirects
+  # renamed repos, so gathering keeps working. Update this URL when it lands.
+  - url: "https://github.com/input-output-hk/hades"
+    product: cbde
+    teamOnly: false
 
-# Curated jump-off points shown on the Links hub (built in a later slice).
+# Curated jump-off points shown on the Links page.
 links:
-  - label: Cardano Developer Portal
-    url: "https://developers.cardano.org"
-  - label: Cardano Discord
-    url: "https://discord.gg/cardano"
+  - label: Lean-blaster
+    url: "https://github.com/input-output-hk/Lean-blaster"
+  - label: 2026/27 governance action (AdaStat)
+    url: "https://adastat.net/governances/73e171a4c0730b4b59ecae271ab89f12a9d56360b02920e1f95107dbdc1d676205"
