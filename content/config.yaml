@@ -1,7 +1,7 @@
 # Site-wide configuration for the Cardano High Assurance tracker.
 site:
   title: Cardano High Assurance
-  tagline: A transparent, weekly-updated tracker for IO's Cardano High Assurance toolkit.
+  tagline: A transparent, weekly-updated tracker for Input Output's Cardano High Assurance toolkit.
   description: >-
     Track delivery of Input Output's Cardano High Assurance products —
     automated formal verification (Blaster), property-based testing, static

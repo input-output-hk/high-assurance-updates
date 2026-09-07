@@ -37,23 +37,24 @@
     Plu-stan automatically detects common errors, performance issues, and
     anti-patterns in Plinth contracts, improving code quality, security, and
     developer productivity without requiring user expertise. Its ruleset is
-    grounded in the Cardano CWE research, which catalogues Cardano-specific
+    grounded in the Cardano CWE research, which catalogs Cardano-specific
     vulnerability classes. The core is designed to be adaptable to other
-    smart contract languages.
+    smart contract languages. Beyond the 2025/26 funded milestones, ongoing
+    work on the tool is tracked in the weekly updates.
   milestones:
     # 2025/26 cycle — statuses and dates to be confirmed by the team.
     - id: PS.01
       title: Proof of Concept
       status: done
-      description: Initial proof-of-concept static analyzer for Plinth.
+      description: Initial proof-of-concept static analyzer for Plinth. Delivery date to be confirmed by the team.
     - id: PS.02
       title: Ruleset Documentation
       status: done
-      description: Documented ruleset of detected error classes and anti-patterns.
+      description: Documented ruleset of detected error classes and anti-patterns. Delivery date to be confirmed by the team.
     - id: PS.03
       title: Stable Release
       status: done
-      description: Stable release of the analyzer.
+      description: Stable release of the analyzer. Delivery date to be confirmed by the team.
   links: []
 
 - id: sc-testing-tool
@@ -69,25 +70,26 @@
     diverse inputs and action sequences to test specified contract properties,
     with a VS Code extension for the developer workflow.
   description: >-
-    The sc-testing-tool automatically generates diverse inputs and actions to
+    The property-based testing tool automatically generates diverse inputs and actions to
     test specified contract properties — surfacing edge cases, validating
-    assumptions, and checking vulnerabilities — and integrates into the Plinth
+    assumptions, and checking for vulnerabilities — and integrates into the Plinth
     workflow for rigorous, automated testing. A companion Visual Studio Code
-    extension brings the workflow into the editor.
+    extension brings the workflow into the editor. Beyond the 2025/26 funded
+    milestones, ongoing work on the tool is tracked in the weekly updates.
   milestones:
     # 2025/26 cycle — statuses and dates to be confirmed by the team.
     - id: ST.01
       title: CLI Tool
       status: done
-      description: Command-line property-based testing tool for Plinth contracts.
+      description: Command-line property-based testing tool for Plinth contracts. Delivery date to be confirmed by the team.
     - id: ST.02
       title: VS Code Integration
       status: done
-      description: Visual Studio Code extension integrating the PBT workflow.
+      description: Visual Studio Code extension integrating the PBT workflow. Delivery date to be confirmed by the team.
     - id: ST.03
       title: Documentation
       status: done
-      description: User documentation for the testing framework.
+      description: User documentation for the testing framework. Delivery date to be confirmed by the team.
   links: []
 
 - id: blaster
@@ -105,7 +107,7 @@
     correctness properties of production DApps including Djed and USDCx.
   description: >-
     Blaster mathematically proves correctness properties of Cardano smart
-    contracts with minimal annotations. Built in Lean 4 with Z3 as backend
+    contracts with minimal annotations. Built in Lean 4 with Z3 as a backend
     solver, it operates on Untyped Plutus Core — the common compilation target
     of all Cardano contract languages — so the verification core serves the
     whole ecosystem. The 2026/27 cycle extends it from single-script to full
@@ -121,7 +123,7 @@
       description: >-
         Automated formal verification of individual Cardano scripts; used to
         prove correctness properties of production DApps including Djed and
-        USDCx.
+        USDCx. Delivery date to be confirmed by the team.
     - id: BL.01
       title: Equivalence Checking Tool
       dueDate: "2026-12-31"
@@ -208,14 +210,14 @@
     - high-assurance-2026
   summary: >-
     CBDE (Hades): a single-command, pre-configured containerized environment
-    packaging the complete High Assurance toolkit at verified, compatible
-    versions — compressing setup from days to one click.
+    that will package the complete High Assurance toolkit at verified,
+    compatible versions — aiming to compress setup from days to one click.
   description: >-
-    CBDE packages the complete Plinth toolchain — compilers, libraries,
+    CBDE will package the complete Plinth toolchain — compilers, libraries,
     property-based testing, static analysis, formal verification, and
     profiling — into a single-command containerized setup, becoming the
-    unified hub for the High Assurance toolkit. It targets the largest
-    measured barrier to Cardano developer onboarding: multi-day environment
+    unified hub for the High Assurance toolkit. It targets a well-known
+    barrier to Cardano developer onboarding: multi-day environment
     configuration.
   milestones:
     - id: CB.01

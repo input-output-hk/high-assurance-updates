@@ -67,8 +67,10 @@
   links:
     - label: Governance action (AdaStat)
       url: "https://adastat.net/governances/73e171a4c0730b4b59ecae271ab89f12a9d56360b02920e1f95107dbdc1d676205"
+    # Same CID the team published; the original ipnso-com.ipns.dweb.link "?cid=" form
+    # ignored the parameter and landed on an unrelated page, so serve via ipfs.io.
     - label: Proposal document (IPFS)
-      url: "https://ipnso-com.ipns.dweb.link/?cid=QmQBhjELHaMKhYZjwuskHS9NRyvUdiGv69aK8C1H787c5A"
+      url: "https://ipfs.io/ipfs/QmQBhjELHaMKhYZjwuskHS9NRyvUdiGv69aK8C1H787c5A"
   notes: >-
     USD figure is a reference at an ADA/USD rate of 0.24; the ask is
     denominated in ada.
