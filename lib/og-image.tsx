@@ -62,7 +62,7 @@ export function renderOgImage(): ImageResponse {
               background: "#3fc98d",
             }}
           />
-          Developer Experience Initiative
+          Input Output · High Assurance
         </div>
 
         {/* Title + tagline */}

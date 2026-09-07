@@ -32,7 +32,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-6">
         <Link href="/" className="group flex shrink-0 items-baseline gap-2">
           <span className="font-display text-lg font-semibold tracking-tight text-foreground group-hover:text-primary">
-            DevX Initiative
+            Cardano High Assurance
           </span>
         </Link>
 
