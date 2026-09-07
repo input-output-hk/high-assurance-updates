@@ -1,16 +1,16 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import type { Deliverable, DeliverableUpdate } from "@/lib/types";
+import type { Product, ProductUpdate } from "@/lib/types";
 import { formatShort } from "@/lib/format";
 import { StatusBadge } from "./status-badge";
 
-// The program window the whole timeline is scaled to: Jun 1 2026 → Jan 31 2027.
-// Starts in June to cover the pre-funding backfill weeks (the last milestone,
-// DX.08, is due 15 Jan 2027).
-const WIN_START = Date.UTC(2026, 5, 1);
-const WIN_END = Date.UTC(2027, 0, 31);
+// The program window the whole timeline is scaled to: Jul 1 2026 → Jun 30 2027
+// — the 2026/27 proposal window (Q3 2026 → Q2 2027). Undated milestones (the
+// 2025/26 cycle's) simply render no marker.
+const WIN_START = Date.UTC(2026, 6, 1);
+const WIN_END = Date.UTC(2027, 5, 30);
 const SPAN = WIN_END - WIN_START;
-const MONTHS = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan"];
+const MONTHS = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
 // Leave a small gutter at each end so markers/labels never sit on the track edge.
 const EDGE = 3;
@@ -42,8 +42,8 @@ function weekTicks(): number[] {
 
 function monthMarks() {
   return MONTHS.map((m, i) => {
-    const left = xFromFrac(fracMs(Date.UTC(2026, 5 + i, 1)));
-    const right = xFromFrac(fracMs(Date.UTC(2026, 5 + i + 1, 1)));
+    const left = xFromFrac(fracMs(Date.UTC(2026, 6 + i, 1)));
+    const right = xFromFrac(fracMs(Date.UTC(2026, 6 + i + 1, 1)));
     return { m, left, width: right - left };
   });
 }
@@ -68,7 +68,7 @@ function tipStyle(p: number): React.CSSProperties {
  * An intermediate improvement: a dot on the track that reveals a description on
  * hover/focus and links to the weekly update that reported it.
  */
-function UpdateMarker({ u }: { u: DeliverableUpdate }) {
+function UpdateMarker({ u }: { u: ProductUpdate }) {
   const at = pct(u.date);
   return (
     <Link
@@ -133,7 +133,7 @@ function Marker({
   );
 }
 
-function Track({ d, ticks, today }: { d: Deliverable; ticks: number[]; today: number }) {
+function Track({ d, ticks, today }: { d: Product; ticks: number[]; today: number }) {
   // A workstream carries one or more milestones; each with a due or delivered
   // date becomes a marker. Ongoing work (no dated milestone) shows a spanning
   // bar instead.
@@ -214,12 +214,12 @@ function Track({ d, ticks, today }: { d: Deliverable; ticks: number[]; today: nu
 }
 
 /**
- * Each deliverable rendered as a track on a shared Jun 2026→Jan 2027 timeline: thin
+ * Each product rendered as a track on a shared Jul 2026→Jun 2027 timeline: thin
  * ticks mark weeks; the amber line is the committed deadline; the green line is
  * when it actually shipped (we aim to ship before the deadline); blue dots are
  * intermediate improvements that link to their weekly update.
  */
-export function DeliverableTimeline({ deliverables }: { deliverables: Deliverable[] }) {
+export function ProductTimeline({ products }: { products: Product[] }) {
   const ticks = weekTicks();
   const months = monthMarks();
   const today = pct(new Date().toISOString().slice(0, 10));
@@ -258,13 +258,13 @@ export function DeliverableTimeline({ deliverables }: { deliverables: Deliverabl
         ))}
       </div>
 
-      {/* one row per deliverable */}
+      {/* one row per product */}
       <div className="flex flex-col divide-y divide-border">
-        {deliverables.map((d, i) => (
+        {products.map((d, i) => (
           <div key={d.id} className="ledger-in py-8" style={{ animationDelay: `${i * 50}ms` }}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Link
-                href={`/deliverables/${d.slug}/`}
+                href={`/products/${d.slug}/`}
                 className="group inline-flex items-baseline gap-2"
               >
                 <span className="font-mono text-xs tracking-wider text-primary">{d.id}</span>
