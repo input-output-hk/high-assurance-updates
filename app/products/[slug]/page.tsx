@@ -4,19 +4,20 @@ import { notFound } from "next/navigation";
 import { ActivityItemList } from "@/components/weekly-update";
 import { StatusBadge } from "@/components/status-badge";
 import {
-  getDeliverableBySlug,
-  getDeliverables,
-  getReposForDeliverable,
+  getProductBySlug,
+  getProducts,
+  getProposalsForProduct,
+  getReposForProduct,
   getWeeklyUpdates,
 } from "@/lib/content";
 import { formatDate, formatDateRange, weekParts } from "@/lib/format";
-import { REACTIVE_GROUP, type Deliverable, type WeeklyGroup, type WeeklyUpdate } from "@/lib/types";
+import type { Product, WeeklyGroup, WeeklyUpdate } from "@/lib/types";
 
-// Static export: one page per deliverable, 404 anything else.
+// Static export: one page per product, 404 anything else.
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getDeliverables().map((d) => ({ slug: d.slug }));
+  return getProducts().map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -25,39 +26,38 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const d = getDeliverableBySlug(slug);
-  return d ? { title: d.title, description: d.summary } : { title: "Deliverable" };
+  const p = getProductBySlug(slug);
+  return p ? { title: p.title, description: p.summary } : { title: "Product" };
 }
 
-function quarterLabel(quarter: Deliverable["quarter"]): string {
+function quarterLabel(quarter: Product["quarter"]): string {
   return quarter === "ongoing" ? "Ongoing" : quarter.replace("-", " ");
 }
 
-/** All weekly updates that reported activity for this deliverable, newest first. */
-function activityByWeek(d: Deliverable): { update: WeeklyUpdate; group: WeeklyGroup }[] {
-  // The Reactive deliverable (slug "reactive") maps to the gatherer's Reactive bucket.
-  const groupKey = d.slug === REACTIVE_GROUP ? REACTIVE_GROUP : d.id;
+/** All weekly updates that reported activity for this product, newest first. */
+function activityByWeek(p: Product): { update: WeeklyUpdate; group: WeeklyGroup }[] {
   return getWeeklyUpdates()
-    .map((update) => ({ update, group: update.groups.find((g) => g.deliverable === groupKey) }))
+    .map((update) => ({ update, group: update.groups.find((g) => g.product === p.id) }))
     .filter(
       (x): x is { update: WeeklyUpdate; group: WeeklyGroup } =>
         !!x.group && (x.group.items.length > 0 || Object.keys(x.group.commitCounts).length > 0),
     );
 }
 
-export default async function DeliverablePage({
+export default async function ProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const d = getDeliverableBySlug(slug);
-  if (!d) notFound();
+  const p = getProductBySlug(slug);
+  if (!p) notFound();
 
-  const weeks = activityByWeek(d);
+  const weeks = activityByWeek(p);
   // Tracked repos are derived from config.yaml (the gatherer's source), so the
   // chips shown here always match the repos whose activity rolls up below.
-  const repos = getReposForDeliverable(d.id);
+  const repos = getReposForProduct(p.id);
+  const funding = getProposalsForProduct(p.id);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-14">
@@ -70,21 +70,38 @@ export default async function DeliverablePage({
         </Link>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="font-mono text-sm tracking-wider text-primary">{d.id}</span>
+          <span className="font-mono text-sm tracking-wider text-primary">{p.id}</span>
           <span className="font-mono text-xs uppercase tracking-wider text-muted">
-            {quarterLabel(d.quarter)}
+            {quarterLabel(p.quarter)}
           </span>
-          <StatusBadge status={d.status} />
+          <StatusBadge status={p.status} />
         </div>
 
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-foreground">
-          {d.title}
+          {p.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/80">{d.description}</p>
+        <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/80">{p.description}</p>
 
-        {d.milestones.length > 0 && (
+        {funding.length > 0 && (
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[0.65rem] uppercase tracking-wider text-muted">
+              Funded by
+            </span>
+            {funding.map((prop) => (
+              <Link
+                key={prop.id}
+                href="/proposals"
+                className="rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted transition-colors hover:border-primary hover:text-foreground"
+              >
+                {prop.title}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {p.milestones.length > 0 && (
           <ul className="mt-6 flex flex-col gap-3">
-            {d.milestones.map((m) => (
+            {p.milestones.map((m) => (
               <li
                 key={m.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-md border border-border bg-surface px-3 py-2"
@@ -126,9 +143,9 @@ export default async function DeliverablePage({
           </ul>
         )}
 
-        {d.links.length > 0 && (
+        {p.links.length > 0 && (
           <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-            {d.links.map((link) => (
+            {p.links.map((link) => (
               <li key={`${link.label}-${link.url}`}>
                 <a
                   href={link.url}
@@ -147,13 +164,13 @@ export default async function DeliverablePage({
       <section className="mt-10">
         <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">Activity</h2>
         <p className="mt-1 text-sm text-muted">
-          Gathered GitHub activity for this deliverable, week by week — the same evidence that
-          appears in the weekly updates.
+          Gathered GitHub activity for this product, week by week — the same evidence that
+          appears in the weekly updates. Community contributions are called out.
         </p>
 
         {weeks.length === 0 ? (
           <p className="mt-6 rounded-lg border border-dashed border-border bg-surface p-6 text-sm text-muted">
-            No gathered activity is linked to this deliverable yet. It will appear here as weekly
+            No gathered activity is linked to this product yet. It will appear here as weekly
             updates are published.
           </p>
         ) : (
