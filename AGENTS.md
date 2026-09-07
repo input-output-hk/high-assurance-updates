@@ -28,5 +28,5 @@ behavior or content model:
 - `docs/PRD.md` — product requirements: pages, the manual-status-plus-evidence
   model, the weekly workflow, non-goals.
 - `docs/ARCHITECTURE.md` — the ADRs: static export, content-as-YAML/Markdown,
-  the gatherer (roster + `teamOnly` + repo→deliverable map), CI pipelines,
+  the gatherer (roster + `teamOnly` + repo→product map), CI pipelines,
   `basePath`. Cite the ADR you're implementing.
