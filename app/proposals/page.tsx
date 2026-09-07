@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StatusDot } from "@/components/status-badge";
 import { getProducts, getProposals } from "@/lib/content";
 import type { Proposal, ProposalStatus } from "@/lib/types";
 
@@ -14,12 +15,7 @@ function StatusChip({ status }: { status: ProposalStatus }) {
     status === "active"
       ? { label: "Active", color: "var(--status-progress)" }
       : { label: "Completed", color: "var(--status-done)" };
-  return (
-    <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted">
-      <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
-      {meta.label}
-    </span>
-  );
+  return <StatusDot label={meta.label} color={meta.color} />;
 }
 
 /** The headline ask: on-chain ada when present, USD reference budget otherwise. */
@@ -53,6 +49,7 @@ export default function ProposalsPage() {
         {proposals.map((p, i) => (
           <li
             key={p.id}
+            id={p.id}
             className="ledger-in rounded-lg border border-border bg-surface p-6"
             style={{ animationDelay: `${i * 60}ms` }}
           >
@@ -63,7 +60,7 @@ export default function ProposalsPage() {
               <StatusChip status={p.status} />
             </div>
             <p className="mt-2 font-mono text-xs uppercase tracking-wider text-muted">
-              {p.windowStart} – {p.windowEnd}
+              {p.windowStart.replace("-", " ")} – {p.windowEnd.replace("-", " ")}
               {ask(p) && (
                 <>
                   {" "}· ask <span className="text-foreground">{ask(p)}</span>

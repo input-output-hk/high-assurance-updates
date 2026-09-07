@@ -90,7 +90,7 @@ export default async function ProductPage({
             {funding.map((prop) => (
               <Link
                 key={prop.id}
-                href="/proposals"
+                href={`/proposals#${prop.id}`}
                 className="rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted transition-colors hover:border-primary hover:text-foreground"
               >
                 {prop.title}
@@ -109,6 +109,7 @@ export default async function ProductPage({
                 <span className="font-mono text-xs tracking-wider text-primary">{m.id}</span>
                 <span className="text-sm text-foreground">{m.title}</span>
                 <span className="ml-auto flex flex-wrap gap-x-6 gap-y-0.5 font-mono text-xs">
+                  {!m.dueDate && !m.deliveredDate && <StatusBadge status={m.status} />}
                   {m.dueDate && (
                     <span className="text-muted">
                       Due <span className="text-foreground">{formatDate(m.dueDate)}</span>
