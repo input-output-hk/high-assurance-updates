@@ -50,7 +50,7 @@ export default function ProposalsPage() {
           <li
             key={p.id}
             id={p.id}
-            className="ledger-in rounded-lg border border-border bg-surface p-6"
+            className="ledger-in scroll-mt-24 rounded-lg border border-border bg-surface p-6"
             style={{ animationDelay: `${i * 60}ms` }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
