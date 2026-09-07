@@ -261,11 +261,16 @@ async function gatherRepo(
   const range = `${ymd(start)}..${ymd(end)}`;
   const items: ActivityItem[] = [];
 
+  // GitHub logins are case-insensitive; normalize so a mis-cased roster entry
+  // can't misattribute a team member's work (ADR-14).
+  const rosterSet = new Set(roster.map((l) => l.toLowerCase()));
+  const onRoster = (login: string) => rosterSet.has(login.toLowerCase());
+
   const push = (type: ActivityItem["type"], raw: { title: string; html_url: string; login: string }) => {
     if (isBot(raw.login)) return;
     const item: ActivityItem = { type, title: raw.title, url: raw.html_url, repo: slug, author: raw.login };
     // Non-roster author in a tracked repo → a community contribution (ADR-14).
-    if (raw.login && !roster.includes(raw.login)) item.community = true;
+    if (!repo.teamOnly && raw.login && !onRoster(raw.login)) item.community = true;
     items.push(item);
   };
 
@@ -311,7 +316,7 @@ async function gatherRepo(
     const when = new Date(r.published_at);
     if (when < start || when > endOfDay(end)) continue;
     const login = r.author?.login ?? "";
-    if (repo.teamOnly && !roster.includes(login)) continue;
+    if (repo.teamOnly && !onRoster(login)) continue;
     push("release", { title: r.name || r.tag_name, html_url: r.html_url, login });
   }
 
@@ -348,7 +353,7 @@ async function gatherRepo(
       if (c.parents.length > 1) continue; // merge commit
       const login = c.author?.login ?? "";
       if (isBot(login)) continue;
-      if (repo.teamOnly && !roster.includes(login)) continue;
+      if (repo.teamOnly && !onRoster(login)) continue;
       commits++;
     }
   }
@@ -373,7 +378,7 @@ async function gatherRepo(
     if (when < start || when > endOfDay(end)) continue;
     const login = cm.user?.login ?? "";
     if (isBot(login)) continue;
-    if (repo.teamOnly && !roster.includes(login)) continue;
+    if (repo.teamOnly && !onRoster(login)) continue;
     comments++;
   }
 
@@ -451,6 +456,25 @@ async function gatherWeek(
   if (failed.length > 0) {
     console.error(
       `  ⚠ ${key}: ${failed.length} of ${repos.length} repo(s) skipped due to errors: ${failed.join(", ")}`,
+    );
+  }
+
+  // Community flagging is roster-driven and the roster is hand-maintained —
+  // summarize what got flagged so misattribution is caught at gather time.
+  const flagged = new Map<string, number>();
+  for (const g of groups.values()) {
+    for (const it of g.items) {
+      if (it.community) flagged.set(it.author, (flagged.get(it.author) ?? 0) + 1);
+    }
+  }
+  if (flagged.size > 0) {
+    const total = [...flagged.values()].reduce((sum, n) => sum + n, 0);
+    const list = [...flagged.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([author, n]) => `${author} (${n})`)
+      .join(", ");
+    console.error(
+      `  ℹ ${key}: flagged ${total} item(s) as community from ${flagged.size} non-roster author(s): ${list}`,
     );
   }
 

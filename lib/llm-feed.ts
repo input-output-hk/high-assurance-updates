@@ -19,7 +19,7 @@ import {
   getStatusAsOf,
   getWeeklyUpdates,
 } from "./content";
-import { formatDateRange } from "./format";
+import { formatAsk, formatDateRange } from "./format";
 import { OTHER_GROUP, type Product, type Proposal, type WeeklyUpdate } from "./types";
 
 /** Canonical base URL with any trailing slash removed. */
@@ -50,9 +50,7 @@ function activityAsOf(): string {
 
 /** The headline ask: on-chain ada when present, USD reference budget otherwise. */
 function askLabel(p: Proposal): string {
-  if (p.treasuryAskAda != null) return `₳${p.treasuryAskAda.toLocaleString("en-US")}`;
-  if (p.budgetUsd != null) return `$${p.budgetUsd.toLocaleString("en-US")}`;
-  return "n/a";
+  return formatAsk(p) ?? "n/a";
 }
 
 /**
@@ -112,7 +110,7 @@ export function buildLlmsTxt(): string {
   lines.push("## Proposals");
   for (const p of getProposals()) {
     lines.push(
-      `- [${p.title}](${b}/proposals/) — ${p.status}, ${p.windowStart} – ${p.windowEnd}, ask ${askLabel(p)}. Funds: ${p.products.join(", ")}.`,
+      `- [${p.title}](${b}/proposals/#${p.id}) — ${p.status}, ${p.windowStart} – ${p.windowEnd}, ask ${askLabel(p)}. Funds: ${p.products.join(", ")}.`,
     );
   }
 
@@ -143,7 +141,7 @@ export function buildLlmsTxt(): string {
 function renderProposalFull(p: Proposal): string {
   const out: string[] = [];
   out.push(`### ${p.title} — ${p.status}`);
-  out.push(`Window: ${p.windowStart} – ${p.windowEnd} · Ask: ${askLabel(p)} · ${base()}/proposals/`);
+  out.push(`Window: ${p.windowStart} – ${p.windowEnd} · Ask: ${askLabel(p)} · ${base()}/proposals/#${p.id}`);
   out.push("");
   out.push(p.summary.trim());
   if (p.products.length > 0) out.push(`\nFunds products: ${p.products.join(", ")}.`);
@@ -195,7 +193,8 @@ function renderWeeklyFull(w: WeeklyUpdate, titles: Record<string, string>): stri
   );
   if (w.body.trim()) {
     out.push("");
-    out.push(w.body.trim());
+    // Weekly bodies use H2 ("## Highlights"); demote so they nest under the week's H3.
+    out.push(w.body.trim().replace(/^## /gm, "#### "));
   }
   const groupsWithContent = w.groups.filter(
     (g) => g.items.length > 0 || Object.keys(g.commitCounts).length > 0,

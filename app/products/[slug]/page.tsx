@@ -90,7 +90,7 @@ export default async function ProductPage({
             {funding.map((prop) => (
               <Link
                 key={prop.id}
-                href={`/proposals#${prop.id}`}
+                href={`/proposals/#${prop.id}`}
                 className="rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted transition-colors hover:border-primary hover:text-foreground"
               >
                 {prop.title}

@@ -159,6 +159,9 @@ export function getProducts(): Product[] {
     const p = normalizeProduct(entry, i);
     if (slugs.has(p.slug)) fail("products.yaml", `duplicate slug "${p.slug}"`);
     if (ids.has(p.id)) fail("products.yaml", `duplicate id "${p.id}"`);
+    if (p.id === OTHER_GROUP) {
+      fail("products.yaml", `product id "${OTHER_GROUP}" is reserved for the unmapped-activity bucket`);
+    }
     slugs.add(p.slug);
     ids.add(p.id);
     return p;

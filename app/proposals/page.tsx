@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusDot } from "@/components/status-badge";
 import { getProducts, getProposals } from "@/lib/content";
-import type { Proposal, ProposalStatus } from "@/lib/types";
+import { formatAsk } from "@/lib/format";
+import type { ProposalStatus } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Proposals",
@@ -16,13 +17,6 @@ function StatusChip({ status }: { status: ProposalStatus }) {
       ? { label: "Active", color: "var(--status-progress)" }
       : { label: "Completed", color: "var(--status-done)" };
   return <StatusDot label={meta.label} color={meta.color} />;
-}
-
-/** The headline ask: on-chain ada when present, USD reference budget otherwise. */
-function ask(p: Proposal): string | null {
-  if (p.treasuryAskAda != null) return `₳${p.treasuryAskAda.toLocaleString("en-US")}`;
-  if (p.budgetUsd != null) return `$${p.budgetUsd.toLocaleString("en-US")}`;
-  return null;
 }
 
 export default function ProposalsPage() {
@@ -61,9 +55,9 @@ export default function ProposalsPage() {
             </div>
             <p className="mt-2 font-mono text-xs uppercase tracking-wider text-muted">
               {p.windowStart.replace("-", " ")} – {p.windowEnd.replace("-", " ")}
-              {ask(p) && (
+              {formatAsk(p) && (
                 <>
-                  {" "}· ask <span className="text-foreground">{ask(p)}</span>
+                  {" "}· ask <span className="text-foreground">{formatAsk(p)}</span>
                 </>
               )}
             </p>
