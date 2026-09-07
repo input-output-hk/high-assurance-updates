@@ -1,29 +1,26 @@
 import Link from "next/link";
-import { DeliverableTimeline } from "@/components/deliverable-timeline";
+import { ProductTimeline } from "@/components/product-timeline";
 import { CounterStrip } from "@/components/weekly-update";
 import {
     getConfig,
-    getDeliverables,
     getLatestWeeklyUpdate,
+    getProducts,
+    getProposals,
     getStatusAsOf,
 } from "@/lib/content";
 import { formatDateRange, weekParts } from "@/lib/format";
-import type { DeliverableStatus } from "@/lib/types";
-
-function formatAda(amount: number): string {
-    const millions = amount / 1_000_000;
-    return `₳${millions.toFixed(1)}M`;
-}
+import type { ProductStatus } from "@/lib/types";
 
 export default function Home() {
     const config = getConfig();
-    const deliverables = getDeliverables();
+    const products = getProducts();
+    const proposals = getProposals();
     const asOf = getStatusAsOf();
     const latest = getLatestWeeklyUpdate();
 
-    const counts = deliverables.reduce<Record<DeliverableStatus, number>>(
-        (acc, d) => {
-            acc[d.status] += 1;
+    const counts = products.reduce<Record<ProductStatus, number>>(
+        (acc, p) => {
+            acc[p.status] += 1;
             return acc;
         },
         { "not-started": 0, "in-progress": 0, done: 0, blocked: 0 },
@@ -31,11 +28,11 @@ export default function Home() {
 
     // Data-derived facts only — no fabricated GitHub numbers (PRD non-goal).
     const facts: { label: string; value: string }[] = [
-        { label: "Treasury ask", value: formatAda(config.proposal.treasuryAskAda) },
-        { label: "Window", value: "Jul '26 – Jan '27" },
-        { label: "Deliverables", value: String(deliverables.length) },
+        { label: "Products", value: String(products.length) },
         { label: "In progress", value: String(counts["in-progress"]) },
         { label: "Done", value: String(counts.done) },
+        { label: "Proposals", value: String(proposals.length) },
+        { label: "Repos tracked", value: String(config.repos.length) },
     ];
 
     return (
@@ -67,20 +64,20 @@ export default function Home() {
                 </dl>
             </section>
 
-            {/* Deliverable timeline. */}
+            {/* Product timeline. */}
             <section className="py-8">
                 <div>
                     <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                        Deliverables
+                        Products
                     </h2>
                     <p className="mt-1 text-sm text-muted">
-                        Committed deadlines vs. actual delivery across the program
+                        Committed milestones vs. actual delivery across the current cycle
                         {asOf ? ` · status as of ${asOf}` : ""}. Select one for its full activity.
                     </p>
                 </div>
 
                 <div className="mt-8">
-                    <DeliverableTimeline deliverables={deliverables} />
+                    <ProductTimeline products={products} />
                 </div>
             </section>
 
