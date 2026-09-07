@@ -103,7 +103,7 @@ export function buildLlmsTxt(): string {
   if (statusAsOf) lines.push(`Product status as of ${statusAsOf}. Activity data as of ${dataAsOf}.`);
   lines.push("");
   lines.push(
-    "For the entire corpus as one document, fetch /llms-full.txt. For structured data, fetch /api/status.json.",
+    `For the entire corpus as one document, fetch ${b}/llms-full.txt. For structured data, fetch ${b}/api/status.json.`,
   );
 
   lines.push("");
