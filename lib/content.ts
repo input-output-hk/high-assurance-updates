@@ -423,7 +423,7 @@ function normalizeGroup(fileName: string, index: number, raw: unknown): WeeklyGr
 }
 
 function normalizeWeekly(fileName: string, raw: string): WeeklyUpdate {
-  const { data, body } = parseFrontmatter(fileName, raw);
+  const { data, body: rawBody } = parseFrontmatter(fileName, raw);
   for (const key of ["week", "weekStart", "weekEnd", "generatedAt"]) {
     if (!asString(data[key])) fail(fileName, `frontmatter is missing string "${key}"`);
   }
@@ -431,6 +431,14 @@ function normalizeWeekly(fileName: string, raw: string): WeeklyUpdate {
     ? data.activity.map((g, i) => normalizeGroup(fileName, i, g))
     : [];
   const week = data.week as string;
+
+  // The gatherer's authoring TODO is an HTML comment; react-markdown escapes
+  // raw HTML, so comments would render as literal text on the page and in the
+  // feeds — strip them, and treat a narrative that is only the bare
+  // "## Highlights" heading as absent.
+  const stripped = rawBody.replace(/<!--[\s\S]*?-->/g, "").trim();
+  const body = /^##\s+Highlights$/.test(stripped) ? "" : stripped;
+
   return {
     week,
     slug: week.toLowerCase(),

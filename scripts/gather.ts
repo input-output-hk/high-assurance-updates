@@ -30,7 +30,8 @@ import {
 } from "../lib/types";
 
 const API = "https://api.github.com";
-const BOT_LOGINS = new Set(["dependabot", "dependabot[bot]", "github-actions[bot]"]);
+// "Copilot" is the bare login GitHub's coding agent uses on the PRs it authors.
+const BOT_LOGINS = new Set(["dependabot", "dependabot[bot]", "github-actions[bot]", "Copilot"]);
 const isBot = (login: string) => login.endsWith("[bot]") || BOT_LOGINS.has(login);
 
 // --- args ------------------------------------------------------------------
