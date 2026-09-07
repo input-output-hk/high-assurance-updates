@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { getConfig, getDeliverables, getTrackedRepos } from "@/lib/content";
-import { REACTIVE_GROUP } from "@/lib/types";
+import { getConfig, getProducts, getTrackedRepos } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Links",
   description:
-    "Curated jump-off points for the Cardano Developer Experience Initiative: tracked repositories and key ecosystem resources.",
+    "Curated jump-off points for Cardano High Assurance: tracked repositories and key ecosystem resources.",
 };
 
 function host(url: string): string {
@@ -52,8 +51,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function LinksPage() {
   const config = getConfig();
   const repos = getTrackedRepos();
-  const deliverables = getDeliverables();
-  const titleById = new Map(deliverables.map((d) => [d.id, d.title]));
+  const products = getProducts();
+  const titleById = new Map(products.map((p) => [p.id, p.title]));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-14">
@@ -64,17 +63,16 @@ export default function LinksPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
           Jump-off points into the work: the repositories this tracker watches and the ecosystem
-          resources the initiative builds on.
+          resources the team builds on.
         </p>
       </header>
 
       {repos.length > 0 && (
         <Section title="Tracked repositories">
           {repos.map((r) => {
-            const note =
-              r.deliverable && r.deliverable !== REACTIVE_GROUP
-                ? `${r.deliverable} · ${titleById.get(r.deliverable) ?? r.deliverable}`
-                : "Reactive / other";
+            const note = r.product
+              ? `${r.product} · ${titleById.get(r.product) ?? r.product}`
+              : "Other";
             return <LinkCard key={r.url} label={`${r.owner}/${r.name}`} url={r.url} note={note} />;
           })}
         </Section>
