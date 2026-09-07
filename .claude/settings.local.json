@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(NEXT_PUBLIC_BASE_PATH=/devx-updates npm run build)",
-      "Bash(gh --version)"
-    ]
-  }
-}
