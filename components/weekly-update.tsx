@@ -108,8 +108,14 @@ export function ActivityItemList({
           ))}
         </ul>
       )}
+      {commits.length > 0 && (
+        <p className="mt-3 flex items-center gap-1.5 font-mono text-xs text-muted">
+          <GitCommitIcon className="shrink-0 text-[0.95rem]" style={{ color: "var(--gh-neutral)" }} />
+          {commits.map(([repo, n]) => `${n} commit${n === 1 ? "" : "s"} · ${repo}`).join("  ·  ")}
+        </p>
+      )}
       {community.length > 0 && (
-        <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 pb-1 pt-3">
+        <section aria-label="Community contributions" className="mt-4 rounded-md border border-border bg-surface-2 px-3 pb-1 pt-3">
           <p className="font-mono text-[0.65rem] uppercase tracking-wider text-primary">
             Community contributions
           </p>
@@ -118,13 +124,7 @@ export function ActivityItemList({
               <ActivityRow key={item.url} item={item} />
             ))}
           </ul>
-        </div>
-      )}
-      {commits.length > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 font-mono text-xs text-muted">
-          <GitCommitIcon className="shrink-0 text-[0.95rem]" style={{ color: "var(--gh-neutral)" }} />
-          {commits.map(([repo, n]) => `${n} commit${n === 1 ? "" : "s"} · ${repo}`).join("  ·  ")}
-        </p>
+        </section>
       )}
     </>
   );

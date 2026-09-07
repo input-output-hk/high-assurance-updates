@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import type { Product, ProductUpdate } from "@/lib/types";
+import type { Milestone, Product, ProductUpdate } from "@/lib/types";
 import { formatShort } from "@/lib/format";
 import { StatusBadge } from "./status-badge";
 
@@ -62,6 +62,16 @@ function tipStyle(p: number): React.CSSProperties {
   if (p < 22) return { left: 0 };
   if (p > 78) return { right: 0 };
   return { left: "50%", transform: "translateX(-50%)" };
+}
+
+/** "BL.04" alone, or same-prefix ids merged as "BL.04/05/06/07". */
+function dueLabel(ms: Milestone[]): string {
+  if (ms.length === 1) return ms[0].id;
+  const ids = ms.map((m) => m.id);
+  const prefix = ids[0].slice(0, ids[0].indexOf(".") + 1);
+  return ids
+    .map((id, i) => (i > 0 && id.startsWith(prefix) ? id.slice(prefix.length) : id))
+    .join("/");
 }
 
 /**
@@ -140,6 +150,16 @@ function Track({ d, ticks, today }: { d: Product; ticks: number[]; today: number
   const dated = d.milestones.filter((m) => m.dueDate || m.deliveredDate);
   const hasDeadline = dated.length > 0;
 
+  // Milestones sharing a due date render as one merged marker ("BL.04/05/06/07")
+  // so their labels stay legible instead of stacking.
+  const dueGroups = new Map<string, Milestone[]>();
+  for (const m of dated) {
+    if (!m.dueDate) continue;
+    const group = dueGroups.get(m.dueDate) ?? [];
+    group.push(m);
+    dueGroups.set(m.dueDate, group);
+  }
+
   return (
     <div className="relative mt-7 h-14 rounded-lg border border-border bg-surface-2 shadow-inner">
       {/* thin week ticks */}
@@ -169,13 +189,11 @@ function Track({ d, ticks, today }: { d: Product; ticks: number[]; today: number
         </>
       )}
 
-      {/* ongoing work has no single deadline — show a spanning bar instead */}
+      {/* no dated milestones this cycle — say so instead of faking a bar */}
       {!hasDeadline && (
-        <span
-          aria-hidden
-          className="absolute inset-y-5 rounded-full"
-          style={{ left: `${EDGE}%`, right: `${EDGE}%`, backgroundColor: DONE_COLOR, opacity: 0.22 }}
-        />
+        <span className="absolute inset-0 flex items-center justify-center px-4 text-center font-mono text-[0.6rem] uppercase tracking-wider text-muted">
+          No dated milestones this cycle — see the product page
+        </span>
       )}
 
       {dated.map((m) => {
@@ -196,14 +214,17 @@ function Track({ d, ticks, today }: { d: Product; ticks: number[]; today: number
                 }}
               />
             )}
-            {/* the milestone id labels the deadline so multiple markers stay distinct */}
-            {due !== null && <Marker at={due} color={DUE_COLOR} label={m.id} date={m.dueDate!} />}
             {delivered !== null && (
               <Marker at={delivered} color={DONE_COLOR} label="Shipped" date={m.deliveredDate!} centerLabel />
             )}
           </Fragment>
         );
       })}
+
+      {/* due markers merged by shared date so labels stay distinct and legible */}
+      {[...dueGroups.entries()].map(([date, ms]) => (
+        <Marker key={date} at={pct(date)} color={DUE_COLOR} label={dueLabel(ms)} date={date} />
+      ))}
 
       {/* intermediate improvements along the way */}
       {d.updates.map((u) => (
