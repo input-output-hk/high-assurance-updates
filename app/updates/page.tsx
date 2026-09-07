@@ -7,7 +7,7 @@ import type { WeeklyUpdate } from "@/lib/types";
 export const metadata: Metadata = {
   title: "Updates",
   description:
-    "Weekly progress on the Cardano Developer Experience Initiative: gathered GitHub activity grouped by deliverable, plus a short narrative.",
+    "Weekly progress on Cardano High Assurance: gathered GitHub activity grouped by product, plus a short narrative.",
 };
 
 /** A plain-text teaser from the Markdown narrative for the archive list. */
@@ -47,7 +47,7 @@ export default function UpdatesPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
           A weekly record of what shipped, gathered automatically from GitHub and grouped by
-          deliverable, with a short narrative from the team. Numbers are snapshots as of each
+          product, with a short narrative from the team. Numbers are snapshots as of each
           gather run.
         </p>
       </header>
