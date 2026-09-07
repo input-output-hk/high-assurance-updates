@@ -4,7 +4,7 @@
  *
  * Reads the curated repo list + roster from content/config.yaml, queries the
  * public GitHub API for the target calendar week (default: the prior Mon–Sun),
- * groups activity by deliverable, and writes content/weekly/YYYY-Www.md with
+ * groups activity by product, and writes content/weekly/YYYY-Www.md with
  * an empty Highlights section for a human to fill in before merge.
  *
  * Run:  GITHUB_TOKEN=$(gh auth token) npx tsx scripts/gather.ts [options]
@@ -14,7 +14,7 @@
  *   --to   2026-07-12    overlaps [from, to] (both YYYY-MM-DD, used together).
  *                        Weeks with no activity are skipped, not written.
  *   --repo owner/name    override the tracked repo list (repeatable); for
- *                        testing. Uses deliverable=null, teamOnly=false.
+ *                        testing. Uses product=null, teamOnly=false.
  *   --dry-run            print the generated file(s) to stdout, don't write them
  */
 
@@ -23,7 +23,7 @@ import { join } from "node:path";
 import { dump as dumpYaml } from "js-yaml";
 import { getConfig } from "../lib/content";
 import {
-  REACTIVE_GROUP,
+  OTHER_GROUP,
   type ActivityItem,
   type TrackedRepo,
   type WeeklyCounters,
@@ -166,7 +166,7 @@ async function gh<T>(path: string): Promise<T> {
       headers: {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "devx-updates-gatherer",
+        "User-Agent": "high-assurance-updates-gatherer",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
@@ -263,7 +263,10 @@ async function gatherRepo(
 
   const push = (type: ActivityItem["type"], raw: { title: string; html_url: string; login: string }) => {
     if (isBot(raw.login)) return;
-    items.push({ type, title: raw.title, url: raw.html_url, repo: slug, author: raw.login });
+    const item: ActivityItem = { type, title: raw.title, url: raw.html_url, repo: slug, author: raw.login };
+    // Non-roster author in a tracked repo → a community contribution (ADR-14).
+    if (raw.login && !roster.includes(raw.login)) item.community = true;
+    items.push(item);
   };
 
   // Merged PRs, opened issues, closed issues (ADR-7: itemize signal).
@@ -394,7 +397,7 @@ async function gatherWeek(
   const { key, start, end } = week;
   console.error(`Gathering ${key} (${ymd(start)} … ${ymd(end)}) across ${repos.length} repo(s)…`);
 
-  // Group activity by deliverable id (or the Reactive bucket), tracking per-repo commit counts.
+  // Group activity by product id (or the Other bucket), tracking per-repo commit counts.
   const groups = new Map<string, { items: ActivityItem[]; commitCounts: Record<string, number> }>();
   const counters: WeeklyCounters = {
     prsMerged: 0,
@@ -411,7 +414,7 @@ async function gatherWeek(
 
   for (const repo of repos) {
     const slug = `${repo.owner}/${repo.name}`;
-    const groupKey = repo.deliverable ?? REACTIVE_GROUP;
+    const groupKey = repo.product ?? OTHER_GROUP;
     const group = groups.get(groupKey) ?? { items: [], commitCounts: {} };
 
     // Isolate per-repo failures: a renamed/private/missing repo (or a transient
@@ -453,7 +456,7 @@ async function gatherWeek(
 
   const activity = [...groups.entries()]
     .filter(([, g]) => g.items.length > 0 || Object.keys(g.commitCounts).length > 0)
-    .map(([deliverable, g]) => ({ deliverable, items: g.items, commitCounts: g.commitCounts }));
+    .map(([product, g]) => ({ product, items: g.items, commitCounts: g.commitCounts }));
 
   const frontmatter = {
     week: key,
@@ -468,7 +471,8 @@ async function gatherWeek(
     `---\n${dumpYaml(frontmatter, { lineWidth: 100 }).trimEnd()}\n---\n\n` +
     `## Highlights\n\n` +
     `<!-- Write the week's narrative here before merging. What shipped, why it\n` +
-    `matters, and what's next. The activity above is auto-gathered evidence. -->\n`;
+    `matters, and what's next. The activity above is auto-gathered evidence;\n` +
+    `items flagged community:true are outside contributions — consider a shout-out. -->\n`;
 
   return { file, hasActivity: activity.length > 0 };
 }
@@ -484,7 +488,7 @@ async function main() {
       ? args.repos.map((r) => {
           const [owner, name] = r.split("/");
           if (!owner || !name) throw new Error(`--repo must be owner/name, got "${r}"`);
-          return { url: `https://github.com/${r}`, owner, name, deliverable: null, teamOnly: false };
+          return { url: `https://github.com/${r}`, owner, name, product: null, teamOnly: false };
         })
       : config.repos;
 
