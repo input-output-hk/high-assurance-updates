@@ -1,4 +1,4 @@
-// LLM-readable feeds for the DevX Initiative tracker (PRD G4 / NFR-5).
+// LLM-readable feeds for the Cardano High Assurance tracker (PRD G4 / NFR-5).
 //
 // One place that turns the site's committed content (the same loaders the pages
 // use — so these can never drift from what's rendered) into three machine
@@ -7,33 +7,24 @@
 //   /llms.txt        — the llms.txt-standard index: a short Markdown map with
 //                      absolute links to every resource an LLM should read.
 //   /llms-full.txt   — the whole corpus as one clean Markdown document.
-//   /api/status.json — structured deliverable status + proof-of-work snapshot.
+//   /api/status.json — structured product status + proof-of-work snapshot.
 //
 // Everything is a build-time snapshot of committed data (ADR-1); the feeds are
 // labelled with the "as of" dates so consumers know their freshness.
 
 import {
   getConfig,
-  getDeliverables,
+  getProducts,
+  getProposals,
   getStatusAsOf,
   getWeeklyUpdates,
 } from "./content";
 import { formatDateRange } from "./format";
-import { REACTIVE_GROUP, type Deliverable, type WeeklyUpdate } from "./types";
+import { OTHER_GROUP, type Product, type Proposal, type WeeklyUpdate } from "./types";
 
 /** Canonical base URL with any trailing slash removed. */
 function base(): string {
   return getConfig().site.url.replace(/\/+$/, "");
-}
-
-/** Order deliverables D1…D8 numerically for a stable, readable feed. */
-function byDeliverableNumber(a: Deliverable, b: Deliverable): number {
-  const n = (id: string) => Number(id.replace(/^\D+/, "")) || 0;
-  return n(a.id) - n(b.id);
-}
-
-function sortedDeliverables(): Deliverable[] {
-  return [...getDeliverables()].sort(byDeliverableNumber);
 }
 
 /** Human labels for gathered activity types (ADR-7). */
@@ -45,16 +36,23 @@ const ACTIVITY_LABEL: Record<string, string> = {
   release: "Release",
 };
 
-/** Map a deliverable id (or the Reactive key) to a display title. */
-function deliverableTitleMap(): Record<string, string> {
-  const map: Record<string, string> = { [REACTIVE_GROUP]: "Other / Reactive" };
-  for (const d of getDeliverables()) map[d.id] = d.title;
+/** Map a product id (or the Other key) to a display title. */
+function productTitleMap(): Record<string, string> {
+  const map: Record<string, string> = { [OTHER_GROUP]: "Other" };
+  for (const p of getProducts()) map[p.id] = p.title;
   return map;
 }
 
 /** Newest weekly's generatedAt — the freshness of the activity data. */
 function activityAsOf(): string {
   return getWeeklyUpdates()[0]?.generatedAt ?? "";
+}
+
+/** The headline ask: on-chain ada when present, USD reference budget otherwise. */
+function askLabel(p: Proposal): string {
+  if (p.treasuryAskAda != null) return `₳${p.treasuryAskAda.toLocaleString("en-US")}`;
+  if (p.budgetUsd != null) return `$${p.budgetUsd.toLocaleString("en-US")}`;
+  return "n/a";
 }
 
 /**
@@ -94,31 +92,34 @@ function proofOfWork() {
 
 /** The llms.txt index: a short Markdown map linking every resource (H2 + bullet lists). */
 export function buildLlmsTxt(): string {
-  const { site, proposal } = getConfig();
+  const { site } = getConfig();
   const b = base();
   const statusAsOf = getStatusAsOf();
   const dataAsOf = activityAsOf();
-  const ada = proposal.treasuryAskAda.toLocaleString("en-US");
-  const usd = proposal.treasuryAskUsd.toLocaleString("en-US");
 
   const lines: string[] = [];
   lines.push(`# ${site.title}`);
   lines.push("");
-  lines.push(`> ${site.tagline} Manual deliverable status backed by automatically gathered GitHub evidence.`);
+  lines.push(`> ${site.tagline} Manual product status backed by automatically gathered GitHub evidence.`);
   lines.push("");
-  lines.push(
-    `Treasury ask: ₳${ada} (~$${usd}). Window: ${proposal.windowStart} – ${proposal.windowEnd}. Lead: ${proposal.lead}.`,
-  );
-  if (statusAsOf) lines.push(`Deliverable status as of ${statusAsOf}. Activity data as of ${dataAsOf}.`);
+  if (statusAsOf) lines.push(`Product status as of ${statusAsOf}. Activity data as of ${dataAsOf}.`);
   lines.push("");
   lines.push(
     "For the entire corpus as one document, fetch /llms-full.txt. For structured data, fetch /api/status.json.",
   );
 
   lines.push("");
-  lines.push("## Deliverables");
-  for (const d of sortedDeliverables()) {
-    lines.push(`- [${d.id} · ${d.title} — ${d.status}](${b}/deliverables/${d.slug}/): ${d.summary.trim()}`);
+  lines.push("## Proposals");
+  for (const p of getProposals()) {
+    lines.push(
+      `- [${p.title}](${b}/proposals/) — ${p.status}, ${p.windowStart} – ${p.windowEnd}, ask ${askLabel(p)}. Funds: ${p.products.join(", ")}.`,
+    );
+  }
+
+  lines.push("");
+  lines.push("## Products");
+  for (const p of getProducts()) {
+    lines.push(`- [${p.id} · ${p.title} — ${p.status}](${b}/products/${p.slug}/): ${p.summary.trim()}`);
   }
 
   lines.push("");
@@ -129,8 +130,8 @@ export function buildLlmsTxt(): string {
 
   lines.push("");
   lines.push("## Machine-readable");
-  lines.push(`- [Full corpus (Markdown)](${b}/llms-full.txt): proposal, all deliverable status, and every weekly update in one file.`);
-  lines.push(`- [Status snapshot (JSON)](${b}/api/status.json): structured deliverable status and cumulative proof-of-work.`);
+  lines.push(`- [Full corpus (Markdown)](${b}/llms-full.txt): proposals, all product status, and every weekly update in one file.`);
+  lines.push(`- [Status snapshot (JSON)](${b}/api/status.json): structured product status and cumulative proof-of-work.`);
   lines.push(`- [Source repository](${site.repoUrl}): the committed YAML/Markdown behind everything here.`);
   lines.push("");
 
@@ -139,30 +140,46 @@ export function buildLlmsTxt(): string {
 
 // --- /llms-full.txt --------------------------------------------------------
 
-function renderDeliverableFull(d: Deliverable): string {
+function renderProposalFull(p: Proposal): string {
+  const out: string[] = [];
+  out.push(`### ${p.title} — ${p.status}`);
+  out.push(`Window: ${p.windowStart} – ${p.windowEnd} · Ask: ${askLabel(p)} · ${base()}/proposals/`);
+  out.push("");
+  out.push(p.summary.trim());
+  if (p.products.length > 0) out.push(`\nFunds products: ${p.products.join(", ")}.`);
+  if (p.collaborators.length > 0) out.push(`In collaboration with: ${p.collaborators.join(", ")}.`);
+  if (p.links.length > 0) {
+    out.push(`Links: ${p.links.map((l) => `${l.label} (${l.url})`).join(", ")}`);
+  }
+  if (p.notes.trim()) out.push(`\nNote: ${p.notes.trim()}`);
+  return out.join("\n");
+}
+
+function renderProductFull(p: Product): string {
   const b = base();
   const out: string[] = [];
-  out.push(`### ${d.id} · ${d.title} — ${d.status}`);
-  out.push(`Quarter: ${d.quarter} · Status updated: ${d.statusUpdatedAt} · ${b}/deliverables/${d.slug}/`);
+  out.push(`### ${p.id} · ${p.title} — ${p.status}`);
+  out.push(`Quarter: ${p.quarter} · Status updated: ${p.statusUpdatedAt} · ${b}/products/${p.slug}/`);
+  if (p.proposals.length > 0) out.push(`Funded by: ${p.proposals.join(", ")}`);
   out.push("");
-  out.push(d.summary.trim());
-  if (d.description.trim() && d.description.trim() !== d.summary.trim()) {
+  out.push(p.summary.trim());
+  if (p.description.trim() && p.description.trim() !== p.summary.trim()) {
     out.push("");
-    out.push(d.description.trim());
+    out.push(p.description.trim());
   }
-  if (d.milestones.length > 0) {
+  if (p.milestones.length > 0) {
     out.push("");
     out.push("Milestones:");
-    for (const m of d.milestones) {
+    for (const m of p.milestones) {
       const due = m.dueDate ? `due ${m.dueDate}` : "no calendar deadline";
       const delivered = m.deliveredDate ? `, delivered ${m.deliveredDate}` : "";
       out.push(`- ${m.id} ${m.title} — ${m.status} (${due}${delivered})`);
       if (m.description.trim()) out.push(`  ${m.description.trim().replace(/\s+/g, " ")}`);
     }
   }
-  if (d.links.length > 0) {
+  if (p.links.length > 0) {
     out.push("");
-    out.push(`Links: ${d.links.map((l) => `${l.label} (${l.url})`).join(", ")}`);
+    out.push(`Links: ${p.links.map((l) => `${l.label} (${l.url})`).join(", ")}`);
   }
   return out.join("\n");
 }
@@ -185,14 +202,14 @@ function renderWeeklyFull(w: WeeklyUpdate, titles: Record<string, string>): stri
   );
   if (groupsWithContent.length > 0) {
     out.push("");
-    out.push("Activity by deliverable:");
+    out.push("Activity by product:");
     for (const g of groupsWithContent) {
-      const title = titles[g.deliverable] ?? g.deliverable;
+      const title = titles[g.product] ?? g.product;
       out.push("");
-      out.push(`- ${g.deliverable} · ${title}`);
+      out.push(`- ${g.product} · ${title}`);
       for (const it of g.items) {
         const label = ACTIVITY_LABEL[it.type] ?? it.type;
-        const author = it.author ? ` by ${it.author}` : "";
+        const author = it.author ? ` by ${it.author}${it.community ? " (community)" : ""}` : "";
         out.push(`  - ${label}: ${it.title} — ${it.repo}${author} (${it.url})`);
       }
       const commits = Object.entries(g.commitCounts);
@@ -206,12 +223,10 @@ function renderWeeklyFull(w: WeeklyUpdate, titles: Record<string, string>): stri
 
 /** The whole corpus as one Markdown document. */
 export function buildLlmsFullTxt(): string {
-  const { site, proposal } = getConfig();
+  const { site } = getConfig();
   const statusAsOf = getStatusAsOf();
   const dataAsOf = activityAsOf();
-  const titles = deliverableTitleMap();
-  const ada = proposal.treasuryAskAda.toLocaleString("en-US");
-  const usd = proposal.treasuryAskUsd.toLocaleString("en-US");
+  const titles = productTitleMap();
 
   const parts: string[] = [];
   parts.push(`# ${site.title} — Full Snapshot`);
@@ -221,11 +236,7 @@ export function buildLlmsFullTxt(): string {
   parts.push(
     [
       `Source: ${base()}`,
-      `Treasury ask: ₳${ada} (~$${usd})`,
-      `Window: ${proposal.windowStart} – ${proposal.windowEnd}`,
-      `Lead: ${proposal.lead}`,
-      proposal.collaborators.length ? `Collaborators: ${proposal.collaborators.join(", ")}` : "",
-      statusAsOf ? `Deliverable status as of ${statusAsOf}` : "",
+      statusAsOf ? `Product status as of ${statusAsOf}` : "",
       dataAsOf ? `Activity data as of ${dataAsOf}` : "",
     ]
       .filter(Boolean)
@@ -233,13 +244,17 @@ export function buildLlmsFullTxt(): string {
   );
   parts.push("");
   parts.push(
-    "This document is generated from the tracker's committed content (see docs/ARCHITECTURE.md ADR-3): deliverable status is authored by hand; the weekly activity is gathered from GitHub as supporting evidence. All figures are snapshots as of the dates above, not real-time.",
+    "This document is generated from the tracker's committed content (see docs/ARCHITECTURE.md ADR-3): product status is authored by hand; the weekly activity is gathered from GitHub as supporting evidence. All figures are snapshots as of the dates above, not real-time.",
   );
 
   parts.push("\n---\n");
-  parts.push("## Deliverable status\n");
+  parts.push("## Proposals\n");
+  parts.push(getProposals().map(renderProposalFull).join("\n\n"));
+
+  parts.push("\n---\n");
+  parts.push("## Product status\n");
   if (statusAsOf) parts.push(`Status as of ${statusAsOf}.\n`);
-  parts.push(sortedDeliverables().map(renderDeliverableFull).join("\n\n"));
+  parts.push(getProducts().map(renderProductFull).join("\n\n"));
 
   parts.push("\n---\n");
   parts.push("## Weekly updates\n");
@@ -251,42 +266,47 @@ export function buildLlmsFullTxt(): string {
 
 // --- /api/status.json ------------------------------------------------------
 
-/** Structured deliverable status + proof-of-work snapshot for programmatic consumers. */
+/** Structured product status + proof-of-work snapshot for programmatic consumers. */
 export function buildStatusJson() {
-  const { site, proposal } = getConfig();
+  const { site } = getConfig();
   const b = base();
   const weeks = getWeeklyUpdates();
 
   return {
     site: { title: site.title, url: b, repoUrl: site.repoUrl },
-    proposal: {
-      treasuryAskAda: proposal.treasuryAskAda,
-      treasuryAskUsd: proposal.treasuryAskUsd,
-      windowStart: proposal.windowStart,
-      windowEnd: proposal.windowEnd,
-      lead: proposal.lead,
-      collaborators: proposal.collaborators,
-    },
     // Manual status is authoritative (ADR-3); activity is snapshot evidence (ADR-1).
     statusAsOf: getStatusAsOf(),
     activityAsOf: activityAsOf(),
-    deliverables: sortedDeliverables().map((d) => ({
-      id: d.id,
-      slug: d.slug,
-      title: d.title,
-      quarter: d.quarter,
-      status: d.status,
-      statusUpdatedAt: d.statusUpdatedAt,
-      summary: d.summary.trim(),
-      url: `${b}/deliverables/${d.slug}/`,
-      milestones: d.milestones.map((m) => ({
+    proposals: getProposals().map((p) => ({
+      id: p.id,
+      title: p.title,
+      status: p.status,
+      windowStart: p.windowStart,
+      windowEnd: p.windowEnd,
+      treasuryAskAda: p.treasuryAskAda,
+      budgetUsd: p.budgetUsd,
+      products: p.products,
+      collaborators: p.collaborators,
+      links: p.links,
+    })),
+    products: getProducts().map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      quarter: p.quarter,
+      status: p.status,
+      statusUpdatedAt: p.statusUpdatedAt,
+      proposals: p.proposals,
+      summary: p.summary.trim(),
+      url: `${b}/products/${p.slug}/`,
+      milestones: p.milestones.map((m) => ({
         id: m.id,
         title: m.title,
         status: m.status,
         dueDate: m.dueDate,
         deliveredDate: m.deliveredDate,
       })),
-      links: d.links,
+      links: p.links,
     })),
     proofOfWork: proofOfWork(),
     weeks: weeks.map((w) => ({
