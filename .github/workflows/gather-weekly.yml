@@ -47,7 +47,7 @@ jobs:
           commit-message: "chore(weekly): gather activity"
           title: "Weekly update"
           body: |
-            Auto-gathered weekly activity, grouped by deliverable.
+            Auto-gathered weekly activity, grouped by product. Community contributions are flagged.
 
             **Before merging:** fill in the **Highlights** section with the
             week's narrative. Nothing publishes until this PR is merged (ADR-8).
