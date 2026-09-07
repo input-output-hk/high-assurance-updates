@@ -1,7 +1,7 @@
-import type { DeliverableStatus } from "@/lib/types";
+import type { ProductStatus } from "@/lib/types";
 
 const STATUS_META: Record<
-  DeliverableStatus,
+  ProductStatus,
   { label: string; color: string }
 > = {
   done: { label: "Done", color: "var(--status-done)" },
@@ -10,7 +10,7 @@ const STATUS_META: Record<
   "not-started": { label: "Not started", color: "var(--status-todo)" },
 };
 
-export function StatusBadge({ status }: { status: DeliverableStatus }) {
+export function StatusBadge({ status }: { status: ProductStatus }) {
   const meta = STATUS_META[status];
   return (
     <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted">
@@ -24,6 +24,6 @@ export function StatusBadge({ status }: { status: DeliverableStatus }) {
   );
 }
 
-export function statusColor(status: DeliverableStatus): string {
+export function statusColor(status: ProductStatus): string {
   return STATUS_META[status].color;
 }

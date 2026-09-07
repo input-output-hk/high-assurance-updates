@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { FC, SVGProps } from "react";
-import type { ActivityItem, ActivityType, Deliverable, WeeklyCounters, WeeklyGroup } from "@/lib/types";
-import { REACTIVE_GROUP } from "@/lib/types";
+import type { ActivityItem, ActivityType, Product, WeeklyCounters, WeeklyGroup } from "@/lib/types";
+import { OTHER_GROUP } from "@/lib/types";
 import { StatusBadge } from "./status-badge";
 import {
   CommentIcon,
@@ -84,7 +84,11 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   );
 }
 
-/** The list of activity items + per-repo commit summary for one group/week. */
+/**
+ * The list of activity items + per-repo commit summary for one group/week.
+ * Roster-authored items list first; non-roster items are set apart under a
+ * "Community contributions" callout (ADR-14).
+ */
 export function ActivityItemList({
   items,
   commitCounts,
@@ -92,15 +96,29 @@ export function ActivityItemList({
   items: ActivityItem[];
   commitCounts: Record<string, number>;
 }) {
+  const team = items.filter((i) => !i.community);
+  const community = items.filter((i) => i.community);
   const commits = Object.entries(commitCounts);
   return (
     <>
-      {items.length > 0 && (
+      {team.length > 0 && (
         <ul className="divide-y divide-border">
-          {items.map((item) => (
+          {team.map((item) => (
             <ActivityRow key={item.url} item={item} />
           ))}
         </ul>
+      )}
+      {community.length > 0 && (
+        <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 pb-1 pt-3">
+          <p className="font-mono text-[0.65rem] uppercase tracking-wider text-primary">
+            Community contributions
+          </p>
+          <ul className="divide-y divide-border">
+            {community.map((item) => (
+              <ActivityRow key={item.url} item={item} />
+            ))}
+          </ul>
+        </div>
       )}
       {commits.length > 0 && (
         <p className="mt-3 flex items-center gap-1.5 font-mono text-xs text-muted">
@@ -113,45 +131,40 @@ export function ActivityItemList({
 }
 
 /**
- * Gathered activity grouped by deliverable (ADR-6). Each group shows the
- * deliverable's manual status alongside the evidence; the Reactive bucket has
- * no deliverable. Commit volume is summarized per repo (ADR-7).
+ * Gathered activity grouped by product (ADR-6). Each group shows the product's
+ * manual status alongside the evidence; the Other bucket has no product.
+ * Commit volume is summarized per repo (ADR-7).
  */
 export function ActivityGroups({
   groups,
-  deliverables,
+  products,
 }: {
   groups: WeeklyGroup[];
-  deliverables: Deliverable[];
+  products: Product[];
 }) {
-  const byId = new Map(deliverables.map((d) => [d.id, d]));
+  const byId = new Map(products.map((p) => [p.id, p]));
 
   return (
     <div className="flex flex-col gap-5">
       {groups.map((group) => {
-        const reactive = group.deliverable === REACTIVE_GROUP;
-        const deliverable = reactive ? undefined : byId.get(group.deliverable);
+        const other = group.product === OTHER_GROUP;
+        const product = other ? undefined : byId.get(group.product);
         return (
-          <section key={group.deliverable} className="rounded-lg border border-border bg-surface p-5">
+          <section key={group.product} className="rounded-lg border border-border bg-surface p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
               <h3 className="font-display text-base font-semibold text-foreground">
-                {reactive ? (
-                  <>
-                    <span className="font-mono text-xs uppercase tracking-wider text-muted">Other</span>{" "}
-                    / Reactive
-                  </>
-                ) : deliverable ? (
-                  <Link href={`/deliverables/${deliverable.slug}/`} className="hover:text-primary">
-                    <span className="font-mono text-xs tracking-wider text-primary">{deliverable.id}</span>{" "}
-                    {deliverable.title}
+                {other ? (
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted">Other</span>
+                ) : product ? (
+                  <Link href={`/products/${product.slug}/`} className="hover:text-primary">
+                    <span className="font-mono text-xs tracking-wider text-primary">{product.id}</span>{" "}
+                    {product.title}
                   </Link>
                 ) : (
-                  <>
-                    <span className="font-mono text-xs tracking-wider text-primary">{group.deliverable}</span>
-                  </>
+                  <span className="font-mono text-xs tracking-wider text-primary">{group.product}</span>
                 )}
               </h3>
-              {deliverable && <StatusBadge status={deliverable.status} />}
+              {product && <StatusBadge status={product.status} />}
             </div>
 
             <div className="pt-1">
