@@ -145,8 +145,8 @@ function Marker({
 
 function Track({ d, ticks, today }: { d: Product; ticks: number[]; today: number }) {
   // A workstream carries one or more milestones; each with a due or delivered
-  // date becomes a marker. Ongoing work (no dated milestone) shows a spanning
-  // bar instead.
+  // date becomes a marker. Products with no dated milestone show a short text
+  // state instead.
   const dated = d.milestones.filter((m) => m.dueDate || m.deliveredDate);
   const hasDeadline = dated.length > 0;
 
