@@ -40,7 +40,7 @@ export default function Home() {
             {/* Hero — the delivery manifest header. */}
             <section className="border-b border-border pt-8 pb-8">
                 <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">
-                    Delivery ledger
+                    Assurance, measured
                 </p>
                 <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
                     {config.site.title}

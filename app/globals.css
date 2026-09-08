@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 /*
-  Cardano High Assurance tracker — "delivery ledger" design system.
-  Cardano-aligned palette on a deep navy ink; Space Grotesk (display) +
-  Geist Sans (body) + Geist Mono (data). Cardano-aligned, developer-credible
-  visual identity.
+  Cardano High Assurance tracker — "Cleanroom" design system.
+  Cool slate surfaces with a deep teal accent and bronze deadlines;
+  Sora (display + body) + DM Mono (data voice). A security-lab look,
+  deliberately distinct from the DevX tracker this site was forked from.
 */
 
 /* Manual theme toggle wins over prefers-color-scheme: drive `dark:` from the
@@ -12,96 +12,83 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  /* Light theme (cool, blue-tinted — deliberately not cream). */
-  --background: #f5f7fb;
+  /* Light theme (cool slate — the identity's home mode). */
+  --background: #f4f6f8;
   --surface: #ffffff;
-  --surface-2: #eef2f9;
-  --foreground: #0a1428;
-  --muted: #5a6b87;
-  --border: #dce3ef;
-  --primary: #0033ad; /* Cardano blue */
-  --primary-strong: #002a8f;
+  --surface-2: #eceff2;
+  --foreground: #1c2733;
+  --muted: #5d6b79;
+  --border: #dde3e9;
+  --primary: #0e7c86; /* deep teal */
+  --primary-strong: #0b636b;
   --primary-foreground: #ffffff;
-  --on-primary-link: #0033ad;
+  --on-primary-link: #0b636b;
 
-  --status-done: #1f9d6b;
-  --status-progress: #b8791c;
-  --status-blocked: #c6403b;
-  --status-todo: #7a8aa6;
+  --status-done: #177d49;
+  --status-progress: #c77e1f; /* bronze — also the timeline deadline color */
+  --status-blocked: #b3403a;
+  --status-todo: #8a95a1;
 
-  /* GitHub's own semantic colors, for gathered-activity iconography (light). */
+  /* GitHub-semantic hues for gathered-activity iconography, tuned to sit on
+     slate (light). */
   --gh-open: #1a7f37;
-  --gh-merged: #8250df;
-  --gh-closed: #8250df;
-  --gh-release: #0969da;
-  --gh-neutral: #59636e;
-
-  /* Categorical chart series (validated CVD-safe, light). */
-  --viz-1: #2a78d6;
-  --viz-2: #eb6834;
-  --viz-3: #4a3aa7;
+  --gh-merged: #7c56c9;
+  --gh-closed: #7c56c9;
+  --gh-release: #0a6ea4;
+  --gh-neutral: #5d6b79;
 }
 
 :root[data-theme="dark"],
 .dark-seed {
-  /* Dark theme (Cardano navy ink, not pure black). */
-  --background: #0a1428;
-  --surface: #111e38;
-  --surface-2: #16264a;
-  --foreground: #e8edf7;
-  --muted: #8b9bb8;
-  --border: #22314f;
-  --primary: #3d7bff; /* brightened Cardano blue for contrast on dark */
-  --primary-strong: #5b8def;
-  --primary-foreground: #06122b;
-  --on-primary-link: #3d7bff;
+  /* Dark theme (deep slate, not pure black). */
+  --background: #10151a;
+  --surface: #171d24;
+  --surface-2: #1e252d;
+  --foreground: #e6ebf0;
+  --muted: #93a0ac;
+  --border: #2a333d;
+  --primary: #35b3bf; /* lightened teal for contrast on dark */
+  --primary-strong: #4cc4cf;
+  --primary-foreground: #08262a;
+  --on-primary-link: #4cc4cf;
 
-  --status-done: #3fc98d;
-  --status-progress: #e5a94e;
-  --status-blocked: #f0645e;
-  --status-todo: #8b9bb8;
+  --status-done: #3fae7a;
+  --status-progress: #d99a4e;
+  --status-blocked: #d16a63;
+  --status-todo: #6f7c88;
 
-  /* GitHub's own semantic colors (dark). */
-  --gh-open: #3fb950;
-  --gh-merged: #a371f7;
-  --gh-closed: #a371f7;
-  --gh-release: #4493f8;
-  --gh-neutral: #9198a1;
-
-  /* Categorical chart series (validated CVD-safe, dark). */
-  --viz-1: #3987e5;
-  --viz-2: #d95926;
-  --viz-3: #9085e9;
+  /* GitHub-semantic hues (dark). */
+  --gh-open: #46c268;
+  --gh-merged: #a98eea;
+  --gh-closed: #a98eea;
+  --gh-release: #58a6e8;
+  --gh-neutral: #93a0ac;
 }
 
 /* Follow the OS when no explicit choice has been made. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #0a1428;
-    --surface: #111e38;
-    --surface-2: #16264a;
-    --foreground: #e8edf7;
-    --muted: #8b9bb8;
-    --border: #22314f;
-    --primary: #3d7bff;
-    --primary-strong: #5b8def;
-    --primary-foreground: #06122b;
-    --on-primary-link: #3d7bff;
+    --background: #10151a;
+    --surface: #171d24;
+    --surface-2: #1e252d;
+    --foreground: #e6ebf0;
+    --muted: #93a0ac;
+    --border: #2a333d;
+    --primary: #35b3bf;
+    --primary-strong: #4cc4cf;
+    --primary-foreground: #08262a;
+    --on-primary-link: #4cc4cf;
 
-    --status-done: #3fc98d;
-    --status-progress: #e5a94e;
-    --status-blocked: #f0645e;
-    --status-todo: #8b9bb8;
+    --status-done: #3fae7a;
+    --status-progress: #d99a4e;
+    --status-blocked: #d16a63;
+    --status-todo: #6f7c88;
 
-    --gh-open: #3fb950;
-    --gh-merged: #a371f7;
-    --gh-closed: #a371f7;
-    --gh-release: #4493f8;
-    --gh-neutral: #9198a1;
-
-    --viz-1: #3987e5;
-    --viz-2: #d95926;
-    --viz-3: #9085e9;
+    --gh-open: #46c268;
+    --gh-merged: #a98eea;
+    --gh-closed: #a98eea;
+    --gh-release: #58a6e8;
+    --gh-neutral: #93a0ac;
   }
 }
 
@@ -121,9 +108,9 @@
   --color-status-blocked: var(--status-blocked);
   --color-status-todo: var(--status-todo);
 
-  --font-display: var(--font-space-grotesk), var(--font-geist-sans), sans-serif;
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-sora), system-ui, sans-serif;
+  --font-sans: var(--font-sora), system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, monospace;
 }
 
 body {
