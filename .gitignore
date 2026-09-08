@@ -42,3 +42,6 @@ next-env.d.ts
 
 # per-developer tool settings
 .claude/settings.local.json
+
+# visual brainstorming sessions
+.superpowers/
