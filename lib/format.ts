@@ -34,9 +34,13 @@ export function weekParts(week: string): { label: string; year: string } {
   return { label: `Week ${Number(m[2])}`, year: m[1] };
 }
 
-/** The headline ask: on-chain ada when present, USD reference budget otherwise. */
-export function formatAsk(p: Proposal): string | null {
-  if (p.treasuryAskAda != null) return `₳${p.treasuryAskAda.toLocaleString("en-US")}`;
-  if (p.budgetUsd != null) return `$${p.budgetUsd.toLocaleString("en-US")}`;
+/**
+ * The headline figure for a proposal: the on-chain treasury ask when present,
+ * else the scoped reference budget — labeled differently so a budget is never
+ * presented as an ask.
+ */
+export function formatAsk(p: Proposal): { label: "ask" | "budget"; amount: string } | null {
+  if (p.treasuryAskAda != null) return { label: "ask", amount: `₳${p.treasuryAskAda.toLocaleString("en-US")}` };
+  if (p.budgetUsd != null) return { label: "budget", amount: `$${p.budgetUsd.toLocaleString("en-US")}` };
   return null;
 }

@@ -1,4 +1,4 @@
-// LLM-readable feeds for the Cardano High Assurance tracker (PRD G4 / NFR-5).
+// LLM-readable feeds for the Cardano High Assurance tracker (PRD G4).
 //
 // One place that turns the site's committed content (the same loaders the pages
 // use — so these can never drift from what's rendered) into three machine
@@ -48,15 +48,17 @@ function activityAsOf(): string {
   return getWeeklyUpdates()[0]?.generatedAt ?? "";
 }
 
-/** The headline ask: on-chain ada when present, USD reference budget otherwise. */
+/** The headline figure as "label amount", e.g. "ask ₳13,078,578" or "budget $5,002,140". */
 function askLabel(p: Proposal): string {
-  return formatAsk(p) ?? "n/a";
+  const a = formatAsk(p);
+  return a ? `${a.label} ${a.amount}` : "ask n/a";
 }
 
 /**
- * Cumulative proof-of-work across every published week (PRD FR-12). The
- * additive counters are summed; repos-touched is the distinct set across all
- * weeks (summing the per-week counts would double-count).
+ * Cumulative proof-of-work across every published week (dashboard
+ * proof-of-work counters). The additive counters are summed; repos-touched is
+ * the distinct set across all weeks (summing the per-week counts would
+ * double-count).
  */
 function proofOfWork() {
   const weeks = getWeeklyUpdates();
@@ -110,7 +112,7 @@ export function buildLlmsTxt(): string {
   lines.push("## Proposals");
   for (const p of getProposals()) {
     lines.push(
-      `- [${p.title}](${b}/proposals/#${p.id}) — ${p.status}, ${p.windowStart} – ${p.windowEnd}, ask ${askLabel(p)}. Funds: ${p.products.join(", ")}.`,
+      `- [${p.title}](${b}/proposals/#${p.id}) — ${p.status}, ${p.windowStart} – ${p.windowEnd}, ${askLabel(p)}. Funds: ${p.products.join(", ")}.`,
     );
   }
 
@@ -140,8 +142,10 @@ export function buildLlmsTxt(): string {
 
 function renderProposalFull(p: Proposal): string {
   const out: string[] = [];
+  const a = formatAsk(p);
+  const askOrBudget = a ? `${a.label === "ask" ? "Ask" : "Budget"}: ${a.amount}` : "Ask: n/a";
   out.push(`### ${p.title} — ${p.status}`);
-  out.push(`Window: ${p.windowStart} – ${p.windowEnd} · Ask: ${askLabel(p)} · ${base()}/proposals/#${p.id}`);
+  out.push(`Window: ${p.windowStart} – ${p.windowEnd} · ${askOrBudget} · ${base()}/proposals/#${p.id}`);
   out.push("");
   out.push(p.summary.trim());
   if (p.products.length > 0) out.push(`\nFunds products: ${p.products.join(", ")}.`);

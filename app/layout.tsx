@@ -25,7 +25,7 @@ const config = getConfig();
 
 export const metadata: Metadata = {
   // Canonical public URL (incl. the Pages subpath) — the base against which the
-  // generated og:image / twitter:image URLs are resolved to absolute so social
+  // og:image / twitter:image URLs below are resolved to absolute so social
   // crawlers can fetch them. Sourced from config so it moves with a domain change.
   metadataBase: new URL(config.site.url),
   title: {
@@ -33,19 +33,29 @@ export const metadata: Metadata = {
     template: `%s · ${config.site.title}`,
   },
   description: config.site.description,
-  // og:image / twitter:image are supplied by app/opengraph-image.tsx and
-  // app/twitter-image.tsx (the file conventions), so they're omitted here.
+  // og:image / twitter:image point at a static public/og.png (served with a
+  // real .png extension so GitHub Pages sends image/png; regenerate by
+  // editing this file's metadata or replacing the PNG).
   openGraph: {
     type: "website",
     siteName: config.site.title,
     title: config.site.title,
     description: config.site.description,
     url: config.site.url,
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: `${config.site.title} — weekly delivery tracker`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: config.site.title,
     description: config.site.description,
+    images: ["/og.png"],
   },
 };
 
@@ -65,9 +75,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <SiteHeader />
-        {/* Flex column so a page can fill the space between header and footer
-            (the map does this via `.map-view { flex: 1 }`); ordinary pages just
-            flow their content and leave the footer at the bottom. */}
+        {/* Flex column so a page can fill the space between header and footer;
+            ordinary pages just flow their content and leave the footer at the
+            bottom. */}
         <main className="flex flex-1 flex-col min-h-0">{children}</main>
         <SiteFooter />
       </body>

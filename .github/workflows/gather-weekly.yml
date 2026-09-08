@@ -3,6 +3,11 @@
 # Runs every Monday 08:00 UTC, covering the prior Mon–Sun calendar week, and
 # opens a DRAFT PR with the pre-filled weekly update. A human writes the
 # narrative and merges; merging is the publish action (deploy.yml takes over).
+#
+# One-time setup: Settings → Actions → General → Workflow permissions →
+# enable "Allow GitHub Actions to create and approve pull requests".
+# Merge or close each week's draft PR before the next Monday run — the run
+# resets the fixed "weekly-update" branch and would discard unmerged edits.
 name: gather-weekly
 
 on:
@@ -36,7 +41,8 @@ jobs:
         env:
           # Built-in token is enough: all tracked repos are public (ADR-10).
           GITHUB_TOKEN: ${{ github.token }}
-        run: npx tsx scripts/gather.ts ${{ inputs.week && format('--week {0}', inputs.week) || '' }}
+          WEEK_INPUT: ${{ inputs.week }}
+        run: npx tsx scripts/gather.ts ${WEEK_INPUT:+--week $WEEK_INPUT}
 
       - name: Open draft PR
         uses: peter-evans/create-pull-request@v6

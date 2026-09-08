@@ -109,7 +109,10 @@ export default async function ProductPage({
                 <span className="font-mono text-xs tracking-wider text-primary">{m.id}</span>
                 <span className="text-sm text-foreground">{m.title}</span>
                 <span className="ml-auto flex flex-wrap gap-x-6 gap-y-0.5 font-mono text-xs">
-                  {!m.dueDate && !m.deliveredDate && <StatusBadge status={m.status} />}
+                  <StatusBadge status={m.status} />
+                  {!m.dueDate && !m.deliveredDate && (
+                    <span className="text-muted">date to be confirmed</span>
+                  )}
                   {m.dueDate && (
                     <span className="text-muted">
                       Due <span className="text-foreground">{formatDate(m.dueDate)}</span>

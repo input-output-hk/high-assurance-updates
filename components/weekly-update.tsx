@@ -119,6 +119,9 @@ export function ActivityItemList({
           <p className="font-mono text-[0.65rem] uppercase tracking-wider text-primary">
             Community contributions
           </p>
+          <p className="mt-0.5 text-[0.65rem] leading-4 text-muted">
+            Contributions from GitHub accounts outside the team roster.
+          </p>
           <ul className="divide-y divide-border">
             {community.map((item) => (
               <ActivityRow key={item.url} item={item} />

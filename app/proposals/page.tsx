@@ -40,73 +40,76 @@ export default function ProposalsPage() {
       </header>
 
       <ol className="mt-8 flex flex-col gap-6">
-        {proposals.map((p, i) => (
-          <li
-            key={p.id}
-            id={p.id}
-            className="ledger-in scroll-mt-24 rounded-lg border border-border bg-surface p-6"
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
-                {p.title}
-              </h2>
-              <StatusChip status={p.status} />
-            </div>
-            <p className="mt-2 font-mono text-xs uppercase tracking-wider text-muted">
-              {p.windowStart.replace("-", " ")} – {p.windowEnd.replace("-", " ")}
-              {formatAsk(p) && (
-                <>
-                  {" "}· ask <span className="text-foreground">{formatAsk(p)}</span>
-                </>
-              )}
-            </p>
-
-            <p className="mt-4 text-sm leading-6 text-foreground/80">{p.summary}</p>
-
-            {p.products.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="font-mono text-[0.65rem] uppercase tracking-wider text-muted">
-                  Funds
-                </span>
-                {p.products.map((id) => (
-                  <Link
-                    key={id}
-                    href={`/products/${slugById.get(id) ?? id}/`}
-                    className="rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted transition-colors hover:border-primary hover:text-foreground"
-                  >
-                    {titleById.get(id) ?? id}
-                  </Link>
-                ))}
+        {proposals.map((p, i) => {
+          const a = formatAsk(p);
+          return (
+            <li
+              key={p.id}
+              id={p.id}
+              className="ledger-in scroll-mt-24 rounded-lg border border-border bg-surface p-6"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
+                  {p.title}
+                </h2>
+                <StatusChip status={p.status} />
               </div>
-            )}
-
-            {p.collaborators.length > 0 && (
-              <p className="mt-3 text-xs text-muted">
-                In collaboration with {p.collaborators.join(", ")}.
+              <p className="mt-2 font-mono text-xs uppercase tracking-wider text-muted">
+                {p.windowStart.replace("-", " ")} – {p.windowEnd.replace("-", " ")}
+                {a && (
+                  <>
+                    {" "}· {a.label} <span className="text-foreground">{a.amount}</span>
+                  </>
+                )}
               </p>
-            )}
 
-            {p.links.length > 0 && (
-              <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-                {p.links.map((l) => (
-                  <li key={l.url}>
-                    <a
-                      href={l.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-xs text-[color:var(--on-primary-link)] hover:underline"
+              <p className="mt-4 text-sm leading-6 text-foreground/80">{p.summary}</p>
+
+              {p.products.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[0.65rem] uppercase tracking-wider text-muted">
+                    Funds
+                  </span>
+                  {p.products.map((id) => (
+                    <Link
+                      key={id}
+                      href={`/products/${slugById.get(id) ?? id}/`}
+                      className="rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted transition-colors hover:border-primary hover:text-foreground"
                     >
-                      {l.label} ↗
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+                      {titleById.get(id) ?? id}
+                    </Link>
+                  ))}
+                </div>
+              )}
 
-            {p.notes && <p className="mt-3 text-xs leading-5 text-muted">{p.notes}</p>}
-          </li>
-        ))}
+              {p.collaborators.length > 0 && (
+                <p className="mt-3 text-xs text-muted">
+                  In collaboration with {p.collaborators.join(", ")}.
+                </p>
+              )}
+
+              {p.links.length > 0 && (
+                <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                  {p.links.map((l) => (
+                    <li key={l.url}>
+                      <a
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-[color:var(--on-primary-link)] hover:underline"
+                      >
+                        {l.label} ↗
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {p.notes && <p className="mt-3 text-xs leading-5 text-muted">{p.notes}</p>}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
