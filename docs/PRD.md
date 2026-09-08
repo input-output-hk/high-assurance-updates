@@ -62,3 +62,5 @@ products are first-class metadata, not structure.
   and sc-testing-tool (team to confirm; marked in `products.yaml`).
 - Final curated links list.
 - The `hades` → `Hades` repo rename (update `config.yaml` when it lands).
+- Evidence links and dated `updates[]` entries for the Djed / USDCx
+  verifications claimed in `products.yaml` (Blaster summary).
