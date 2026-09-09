@@ -63,8 +63,10 @@ unchanged.
 
 ## 3. Typography
 
-- **Sora** (weights 500/700/800) replaces BOTH Space Grotesk (display) and
-  Geist (body). One sans keeps the static-site font payload small.
+- **Sora** (weights 400/500/600/700/800 — amended during implementation: 400
+  for body text, 600 because `font-semibold` is the workhorse heading weight)
+  replaces BOTH Space Grotesk (display) and Geist (body). One sans keeps the
+  static-site font payload small.
 - **DM Mono** (weights 400/500) replaces Geist Mono as the data voice
   (labels, counters, milestone ids, week keys, code).
 - Loaded via `next/font/google` in `app/layout.tsx`, same pattern as today.
