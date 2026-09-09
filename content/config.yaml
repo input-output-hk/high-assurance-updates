@@ -26,6 +26,7 @@ roster:
   - RSoulatIOHK
   - mpetruska
   - Riley-Kilgore
+  - robpangilinanioi
 
 # Curated repositories the gatherer tracks (ADR-4). Each declares:
 #   product:  which product its activity rolls up to, or null to fall into
